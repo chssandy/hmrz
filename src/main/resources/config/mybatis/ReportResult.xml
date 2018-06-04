@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.reportResult">
+	<select id="getReportResultList" parameterType="ReportResultSearch" resultType="ReportResultBean">
+		SELECT
+		  rp.plan_id,
+		  rp.salary,
+		  rpe.execute_id,
+		  rpe.executor,
+		  rp.vendor_id,
+		  rpe.status,
+		  rpe.commit_time,
+		  rpe.upload_time,
+		  rpe.is_normal,
+		  rpe.answer,
+		  au.moble
+		FROM report_plan rp,
+		     report_plan_space rps,
+		     report_plan_execute rpe,
+		     app_user au
+		WHERE rp.plan_id = rps.plan_id
+		AND rps.plan_space_id = rpe.plan_space_id
+		AND rpe.executor = au.user_id
+		AND rp.is_del = 0
+		<if test="plan_space_id != null and plan_space_id != ''">
+			AND rps.plan_space_id = #{plan_space_id}
+		</if>
+		<if test="status != null and status != '' and status !='-1' ">
+			AND rpe.status = #{status}
+		</if>
+		<if test="moble != null and moble != ''">
+			AND au.moble = #{moble}
+		</if>
+		<if test="execute_id != null and execute_id != ''">
+			AND rpe.execute_id = #{execute_id}
+		</if>
+		<if test="is_normal !=null and is_normal !='' and is_normal != '-1' ">
+			AND rpe.is_normal = #{is_normal}
+		</if>
+		ORDER BY rpe.commit_time ASC
+		<if test="havePage == 1">
+			limit #{start},#{rows}
+		</if>
+	</select>
+
+	<select id="getReportResultCount" parameterType="ReportResultSearch" resultType="int">
+		SELECT
+		  COUNT(1)
+		FROM report_plan rp,
+		     report_plan_space rps,
+		     report_plan_execute rpe,
+		     app_user au
+		WHERE rp.plan_id = rps.plan_id
+		AND rps.plan_space_id = rpe.plan_space_id
+		AND rpe.executor = au.user_id
+		AND rp.is_del = 0
+		<if test="plan_space_id != null and plan_space_id != ''">
+			AND rps.plan_space_id = #{plan_space_id}
+		</if>
+		<if test="status != null and status != '' and status !='-1' ">
+			AND rpe.status = #{status}
+		</if>
+		<if test="moble != null and moble != ''">
+			AND au.moble = #{moble}
+		</if>
+		<if test="execute_id != null and execute_id != ''">
+			AND rpe.execute_id = #{execute_id}
+		</if>
+		<if test="is_normal !=null and is_normal !='' and is_normal != '-1' ">
+			AND rpe.is_normal = #{is_normal}
+		</if>
+	</select>
+
+	<select id="getReportInfo" parameterType="ReportResultSearch" resultType="ReportResultBean">
+		SELECT
+		  rp.plan_id,
+		  ds.name,
+		  rp.salary,
+		  rvs.rename,
+		  rpe.execute_id,
+		  rpe.executor,
+		  rp.vendor_id,
+		  rpe.status,
+		  rpe.commit_time,
+		  rpe.upload_time,
+		  rpe.is_normal,
+		  rpe.answer,
+		  au.moble
+		FROM report_plan rp
+		  LEFT JOIN report_plan_space rps
+		    ON rp.plan_id = rps.plan_id
+		  LEFT JOIN report_vendor_space rvs
+		    ON rps.vendor_space_id = rvs.vendor_space_id
+		  LEFT JOIN db_space ds
+		    ON rvs.space_id = ds.space_id
+		  LEFT JOIN report_plan_execute rpe
+		    ON rps.plan_space_id = rpe.plan_space_id
+		  LEFT JOIN app_user au
+		    ON rpe.executor = au.user_id
+		WHERE rpe.execute_id = #{execute_id}
+		AND rp.is_del = 0
+	</select>
+
+	<update id="passTask" parameterType="ReportResultBean">
+		UPDATE report_plan_execute rpe
+		SET rpe.status = 4,
+		    rpe.is_normal = #{is_normal},
+		    rpe.auditor = #{auditor},
+		    rpe.audit_time = NOW()
+		WHERE rpe.execute_id = #{execute_id} 
+		AND rpe.status = 3
+	</update>
+
+	<update id="rejectTask" parameterType="ReportResultBean">
+		UPDATE report_plan_execute rpe
+		SET rpe.status = 5,
+		    rpe.audit_time = NOW(),
+		    rpe.auditor = #{auditor}
+		WHERE rpe.execute_id = #{execute_id}
+		AND rpe.status = 3
+	</update>
+
+	<update id="incomeBalance" parameterType="ReportResultBean">
+		UPDATE APP_USER
+		SET balance = balance + #{salary}
+		WHERE user_id = #{executor}
+	</update>
+	
+	<update id="updateVendorBalance" parameterType="HashMap">
+	    UPDATE c_vendor
+	    SET balance = balance - #{consume}
+	    WHERE vendor_id = #{vendor_id} AND balance > #{consume}
+	</update>
+</mapper>

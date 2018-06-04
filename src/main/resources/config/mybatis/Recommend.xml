@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.recommend">
+	
+	<select id="getRecommendCouponRuleList" parameterType="RecommendCouponRuleSearch" resultType="RecommendCouponRuleBean">
+		SELECT rule_id,type,denomination,validity_period,min_amount FROM s_rule_refferal 
+		<if test="havePage == 1">
+            LIMIT #{start},#{rows}
+        </if>
+	</select>	
+	
+	<select id="getRecommendCouponRuleCount" parameterType="RecommendCouponRuleSearch" resultType="int">
+		SELECT COUNT(1) FROM s_rule_refferal 
+	</select>
+	
+	<update id="updateRecommendCouponRule" parameterType="RecommendCouponRuleBean">
+		update s_rule_refferal 
+		<set>
+			type = #{type},
+			denomination = #{denomination},
+			validity_period = #{validity_period},
+			min_amount = #{min_amount}
+		</set> 
+		where rule_id = #{rule_id}
+	</update>
+	
+	<select id="getRecommendCouponList" parameterType="AppCouponSearch" resultType="AppCouponBean">
+	
+			SELECT au.moble,au.nick_name,ac.coupon_id,
+			<if test='type == "1" '>
+				(SELECT moble FROM app_user where user_id = arn.recommended) AS recommended,
+			</if>
+			<if test='type == "2"'>
+				(SELECT moble FROM app_user where user_id = arn.referral) AS referral,
+			</if>
+			ac.denomination,ac.min_amount,ac.create_time,ac.validity_period,ac.is_used
+			FROM app_coupon ac 
+			LEFT JOIN app_user au ON ac.user_id = au.user_id 
+			<if test='type == "1"'>
+				LEFT JOIN app_recommend_network arn ON ac.coupon_id = arn.referral_coupon
+			</if>
+			<if test='type == "2"'>
+				LEFT JOIN app_recommend_network arn ON ac.coupon_id = arn.recommended_coupon
+			</if>
+			where ac.type = #{type}
+			<if test="moble != null and moble !='' ">
+				AND au.moble = #{moble}
+			</if>
+			<if test="nick_name != null and nick_name !='' ">
+				AND au.nick_name LIKE CONCAT("%",#{nick_name},"%")
+			</if>
+			<if test="create_btime != null and create_btime !='' ">
+			 	AND ac.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00')
+			</if>
+			<if test="create_etime != null and create_etime !='' ">
+			 	AND ac.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59')
+			</if>
+			<if test='is_used == "0" '>
+                AND ac.is_used = 0
+                AND ac.validity_period >= NOW()
+            </if>
+            <if test='is_used == "1" '>
+                AND ac.is_used = 1
+            </if>
+            <if test='is_used == "2" '>
+                AND ac.is_used = 0
+                AND ac.validity_period &lt; NOW()
+            </if>
+			
+			ORDER BY ac.create_time
+			<if test="havePage == 1">
+            	LIMIT #{start},#{rows}
+        	</if>
+	</select>
+	
+	<select id="getRecommendCouponCount" parameterType="AppCouponSearch" resultType="int">
+	
+			SELECT COUNT(1)
+			FROM app_coupon ac 
+			LEFT JOIN app_user au ON ac.user_id = au.user_id 
+			where ac.type = #{type}
+			<if test="moble != null and moble !='' ">
+				AND au.moble = #{moble}
+			</if>
+			<if test="nick_name != null and nick_name !='' ">
+				AND au.nick_name LIKE CONCAT("%",#{nick_name},"%")
+			</if>
+			<if test="create_btime != null and create_btime !='' ">
+			 	AND ac.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00')
+			</if>
+			<if test="create_etime != null and create_etime !='' ">
+			 	AND ac.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59')
+			</if>
+			<if test='is_used == "0" '>
+                AND ac.is_used = 0
+                AND ac.validity_period >= NOW()
+            </if>
+            <if test='is_used == "1" '>
+                AND ac.is_used = 1
+            </if>
+            <if test='is_used == "2" '>
+                AND ac.is_used = 0
+                AND ac.validity_period &lt; NOW()
+            </if>
+	</select>
+	
+	
+	<select id="getRecommendCouponUseList" parameterType="AppCouponSearch" resultType="AppCouponBean">
+		
+		SELECT au.moble,au.nick_name,ac.coupon_id,ac.used_time,ac.denomination,ac.task_biz,ac.execute_id,ac.task_id,ac.type,
+		CASE ac.task_biz 
+		 	WHEN 1 THEN (SELECT sm.name FROM s_monitor sm WHERE sm.task_id = ac.task_id )  
+			WHEN 2 THEN (SELECT sm.name FROM s_share_wx sm WHERE sm.task_id = ac.task_id)  
+		 	WHEN 3 THEN (SELECT sm.name FROM s_media sm WHERE sm.task_id = ac.task_id)  
+		 	WHEN 4 THEN (SELECT sm.name FROM s_inspecte sm WHERE sm.task_id = ac.task_id)  
+		 	WHEN 5 THEN (SELECT sm.name FROM s_media sm WHERE sm.task_id = ac.task_id)  
+		 	WHEN 6 THEN (SELECT sm.name FROM s_survey sm WHERE sm.task_id = ac.task_id) 
+		 	END AS task_name
+ 		FROM app_coupon ac 
+		LEFT JOIN app_user au on ac.user_id = au.user_id
+		WHERE ac.is_used = 1 AND ac.type &lt;&gt; 0
+		<if test=" moble !=null and moble !='' ">
+			AND au.moble = #{moble}
+		</if>
+		<if test=" nick_name !=null and nick_name !='' ">
+			AND au.nick_name LIKE CONCAT("%",#{nick_name},"%")
+		</if>
+		<if test="create_btime != null and create_btime !='' ">
+		 	AND ac.used_time &gt;= CONCAT(#{create_btime}, ' 00:00:00')
+		</if>
+		<if test="create_etime != null and create_etime !='' ">
+		 	AND ac.used_time &lt;= CONCAT(#{create_etime}, ' 23:59:59')
+		</if>
+		ORDER BY ac.used_time DESC
+		<if test="havePage == 1">
+           	LIMIT #{start},#{rows}
+       	</if>
+	</select>
+	
+	<select id="getRecommendCouponUseCount" parameterType="AppCouponSearch" resultType="int">
+		
+		SELECT COUNT(1)
+ 		FROM app_coupon ac 
+		LEFT JOIN app_user au on ac.user_id = au.user_id
+		WHERE ac.is_used = 1 AND ac.type &lt;&gt; 0
+		<if test=" moble !=null and moble !='' ">
+			AND au.moble = #{moble}
+		</if>
+		<if test=" nick_name !=null and nick_name !='' ">
+			AND au.nick_name LIKE CONCAT("%",#{nick_name},"%")
+		</if>
+		<if test="create_btime != null and create_btime !='' ">
+		 	AND ac.used_time &gt;= CONCAT(#{create_btime}, ' 00:00:00')
+		</if>
+		<if test="create_etime != null and create_etime !='' ">
+		 	AND ac.used_time &lt;= CONCAT(#{create_etime}, ' 23:59:59')
+		</if>
+		
+	</select>
+	
+	
+	
+</mapper>

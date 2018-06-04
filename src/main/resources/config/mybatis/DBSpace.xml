@@ -1,0 +1,534 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.dbspace">
+		
+	<select id="getMediaList" parameterType="DBMediaSearch" resultType="DBMediaBean">
+		select media_type_id,name from db_media_type 
+		<where>
+			<if test="father_id !=null and father_id !=''">
+				father_id = #{father_id}
+			</if>
+			<if test="level !=null and level !=''">
+				level = #{level}
+			</if>
+		</where>
+	</select>
+	
+	
+	<insert id="addDBSpace" parameterType="DBSpaceBean">
+		insert into db_space(name,province_code,city_code,district_code,type,first_type,
+						lng,lat,address,show_type,position,number,is_illumine,relegation,moble,imgs,create_user,ad_count)
+		values(#{name},#{province_code},#{city_code},#{district_code},#{type},#{father_type},
+						#{lng},#{lat},#{address},#{show_type},#{position},#{number},#{is_illumine},#{relegation},#{moble},#{imgs},#{operator},#{ad_count})
+		
+	</insert>
+	
+	<select id="getDuplicateSpaceList" parameterType="DBSpaceSearch" resultType="DBSpaceBean">
+		select ds.space_id,ds.name,
+		(select CONCAT(dmt1.name,"-",dmt.name) from db_media_type dmt  left join db_media_type dmt1 on dmt.father_id = dmt1.media_type_id
+				where ds.type = dmt.media_type_id) as media_name,
+		ds.address,ds.show_type,ds.position,ds.number,ds.imgs from db_space ds
+		 where ds.lng - #{lng} &lt; 0.001 AND #{lng} - ds.lng &lt; 0.001
+AND ds.lat - #{lat} &lt; 0.001 AND #{lat} - ds.lat &lt; 0.001
+		 <if test="havePage == 1">
+            LIMIT #{start},#{rows}
+        </if>
+	</select>
+	
+	<select id="getDuplicateSpaceCount" parameterType="DBSpaceSearch" resultType="int">
+	    select count(1) from  db_space ds where ds.lng - #{lng} &lt; 0.001 AND #{lng} - ds.lng &lt; 0.001
+AND ds.lat - #{lat} &lt; 0.001 AND #{lat} - ds.lat &lt; 0.001
+	</select>
+	
+	<select id="getDBSpaceList" parameterType="DBSpaceSearch" resultType="DBSpaceBean">
+		select ds.space_id,ds.name,
+			 (select xc.city_name from xt_city xc  where xc.city_code = ds.city_code and xc.city_level = 4) as city_name,
+			 (select xc.district_name from xt_city xc  where xc.district_code = ds.district_code and xc.city_level = 5) as district_name,
+			 (select CONCAT(dmt1.name,"-",dmt.name) from db_media_type dmt  left join db_media_type dmt1 on dmt.father_id = dmt1.media_type_id
+				where ds.type = dmt.media_type_id) as media_name,
+				ds.number,ds.is_illumine,ds.relegation,ds.moble,ds.ad_count,
+		 ds.address,ds.show_type,ds.position, DATE_FORMAT(ds.create_time,'%Y-%m-%d %H:%i') as create_time,ds.imgs,xm.manager_name as operator
+		 from db_space ds
+		 left join xt_manager xm on ds.create_user = xm.manager_id
+		 <where>
+		 	<if test="name !='' and name !=null">
+		 		ds.name LIKE CONCAT("%",#{name},"%") AND
+		 	</if>
+		 	<if test="province_code !='' and province_code !=null and province_code !='-1' ">
+		 		ds.province_code = #{province_code}  AND
+		 	</if>
+		 	<if test="city_code !='' and city_code !=null and city_code !='-1'">
+		 		ds.city_code = #{city_code}  AND
+		 	</if>
+		 	<if test="district_code !='' and district_code !=null and district_code !='-1' ">
+		 		ds.district_code = #{district_code}  AND
+		 	</if>
+		 	<if test="type !='' and type !=null and type !='-1' ">
+		 		ds.type = #{type}  AND
+		 	</if>
+		 	<if test="father_type !='' and father_type !=null and father_type !='-1' ">
+		 		ds.first_type = #{father_type}  AND
+		 	</if>
+		 	<if test="address !='' and address !=null">
+		 		ds.address LIKE CONCAT("%",#{address},"%") AND
+		 	</if>
+		 	<if test="create_btime != null and create_btime != ''">
+                ds.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00') AND
+            </if>
+            <if test="create_etime != null and create_etime != ''">
+                ds.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59') AND
+            </if>
+            <if test="operator !='' and operator !=null">
+		 		xm.manager_name LIKE CONCAT("%",#{operator},"%") AND
+		 	</if>
+            1=1
+		 </where>
+		 <!-- add by pfma 2016-08-25 计划点位关联使用-->
+		 <if test="plan_id != '' and plan_id != null">
+            AND NOT EXISTS(
+              SELECT
+                *
+              FROM c_plan_point cpp
+              WHERE cpp.point_id = ds.space_id
+              AND cpp.plan_id = #{plan_id}
+              AND cpp.is_del = 0
+              )
+         </if>
+         <!-- add by pfma 2016-11-28 上报点位关联使用-->
+         <if test="vendor_id != '' and vendor_id != null">
+            AND NOT EXISTS(
+              SELECT
+				  *
+				FROM report_vendor_space rvs
+				WHERE rvs.vendor_id = #{vendor_id}
+				AND rvs.space_id = ds.space_id
+				AND rvs.is_del = 0 
+              )
+         </if>
+		 order by  ds.space_id desc
+		 <if test="havePage == 1">
+            LIMIT #{start},#{rows}
+        </if>
+	</select>
+	
+	<select id="getDBSpaceCount" parameterType="DBSpaceSearch" resultType="int">
+		select  count(1) from  db_space ds left join xt_manager xm on ds.create_user = xm.manager_id
+		 <where>
+		 	<if test="name !='' and name !=null">
+		 		ds.name LIKE CONCAT("%",#{name},"%") AND
+		 	</if>
+		 	<if test="province_code !='' and province_code !=null and province_code !='-1' ">
+		 		ds.province_code = #{province_code}  AND
+		 	</if>
+		 	<if test="city_code !='' and city_code !=null and city_code !='-1'">
+		 		ds.city_code = #{city_code}  AND
+		 	</if>
+		 	<if test="district_code !='' and district_code !=null and district_code !='-1' ">
+		 		ds.district_code = #{district_code}  AND
+		 	</if>
+		 	<if test="type !='' and type !=null and type !='-1' ">
+		 		ds.type = #{type}  AND
+		 	</if>
+		 	<if test="father_type !='' and father_type !=null and father_type !='-1' ">
+		 		ds.first_type = #{father_type}  AND
+		 	</if>
+		 	<if test="address !='' and address !=null">
+		 		ds.address LIKE CONCAT("%",#{address},"%") AND
+		 	</if>
+		 	<if test="create_btime != null and create_btime != ''">
+                ds.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00') AND
+            </if>
+            <if test="create_etime != null and create_etime != ''">
+                ds.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59') AND
+            </if>
+            <if test="operator !='' and operator !=null">
+		 		xm.manager_name LIKE CONCAT("%",#{operator},"%") AND
+		 	</if>
+            1=1
+		 </where>
+		 <!-- add by pfma 2016-08-25 计划点位关联使用-->
+		 <if test="plan_id != '' and plan_id != null">
+            AND NOT EXISTS(
+              SELECT
+                *
+              FROM c_plan_point cpp
+              WHERE cpp.point_id = ds.space_id
+              AND cpp.plan_id = #{plan_id}
+              AND cpp.is_del = 0
+              )
+         </if>
+         <!-- add by pfma 2016-11-28 上报点位关联使用-->
+         <if test="vendor_id != '' and vendor_id != null">
+            AND NOT EXISTS(
+              SELECT
+                  *
+                FROM report_vendor_space rvs
+                WHERE rvs.vendor_id = #{vendor_id}
+                AND rvs.space_id = ds.space_id
+                AND rvs.is_del = 0 
+              )
+         </if>
+	</select>
+	
+	
+	<select id="getDBVendorSpaceList" parameterType="DBSpaceSearch" resultType="DBSpaceBean">
+		select dvs.vendor_space_id,ds.space_id,ds.name,
+			 (select xc.city_name from xt_city xc  where xc.city_code = ds.city_code and xc.city_level = 4) as city_name,
+			 (select xc.district_name from xt_city xc  where xc.district_code = ds.district_code and xc.city_level = 5) as district_name,
+			 (select CONCAT(dmt1.name,"-",dmt.name) from db_media_type dmt  left join db_media_type dmt1 on dmt.father_id = dmt1.media_type_id
+				where ds.type = dmt.media_type_id) as media_name,
+				ds.number,ds.is_illumine,ds.relegation,ds.moble,
+		 ds.address,ds.show_type,ds.position, DATE_FORMAT(ds.create_time,'%Y-%m-%d %H:%i') as create_time,ds.imgs ,xm.manager_name as operator
+		 
+		 from db_vendor_space dvs
+		 left join db_space ds  on dvs.space_id = ds.space_id
+		 left join xt_manager xm on dvs.create_user = xm.manager_id
+		 <where>
+		 	<if test="name !='' and name !=null">
+		 		ds.name LIKE CONCAT("%",#{name},"%") AND
+		 	</if>
+		 	<if test="province_code !='' and province_code !=null and province_code !='-1' ">
+		 		ds.province_code = #{province_code}  AND
+		 	</if>
+		 	<if test="city_code !='' and city_code !=null and city_code !='-1'">
+		 		ds.city_code = #{city_code}  AND
+		 	</if>
+		 	<if test="district_code !='' and district_code !=null and district_code !='-1' ">
+		 		ds.district_code = #{district_code}  AND
+		 	</if>
+		 	<if test="type !='' and type !=null and type !='-1' ">
+		 		ds.type = #{type}  AND
+		 	</if>
+		 	<if test="father_type !='' and father_type !=null and father_type !='-1' ">
+		 		ds.first_type = #{father_type}  AND
+		 	</if>
+		 	<if test="address !='' and address !=null">
+		 		ds.address LIKE CONCAT("%",#{address},"%") AND
+		 	</if>
+		 	<if test="create_btime != null and create_btime != ''">
+                ds.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00') AND
+            </if>
+            <if test="create_etime != null and create_etime != ''">
+                ds.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59') AND
+            </if>
+            <if test="operator !='' and operator !=null">
+		 		xm.manager_name LIKE CONCAT("%",#{operator},"%") AND
+		 	</if>
+            dvs.vendor_id = #{vendor_id}
+		 </where>
+		 order by  ds.space_id desc
+		 <if test="havePage == 1">
+            LIMIT #{start},#{rows}
+        </if>
+	</select>
+	
+	<select id="getDBVendorSpaceCount" parameterType="DBSpaceSearch" resultType="int">
+		select  count(1)  from db_vendor_space dvs
+		left join db_space ds  on dvs.space_id = ds.space_id
+		left join xt_manager xm on dvs.create_user = xm.manager_id
+		 <where>
+		 	<if test="name !='' and name !=null">
+		 		ds.name LIKE CONCAT("%",#{name},"%") AND
+		 	</if>
+		 	<if test="province_code !='' and province_code !=null and province_code !='-1' ">
+		 		ds.province_code = #{province_code}  AND
+		 	</if>
+		 	<if test="city_code !='' and city_code !=null and city_code !='-1'">
+		 		ds.city_code = #{city_code}  AND
+		 	</if>
+		 	<if test="district_code !='' and district_code !=null and district_code !='-1' ">
+		 		ds.district_code = #{district_code}  AND
+		 	</if>
+		 	<if test="type !='' and type !=null and type !='-1' ">
+		 		ds.type = #{type}  AND
+		 	</if>
+		 	<if test="father_type !='' and father_type !=null and father_type !='-1' ">
+		 		ds.first_type = #{father_type}  AND
+		 	</if>
+		 	<if test="address !='' and address !=null">
+		 		ds.address LIKE CONCAT("%",#{address},"%") AND
+		 	</if>
+		 	<if test="create_btime != null and create_btime != ''">
+                ds.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00') AND
+            </if>
+            <if test="create_etime != null and create_etime != ''">
+                ds.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59') AND
+            </if>
+            <if test="operator !='' and operator !=null">
+		 		xm.manager_name LIKE CONCAT("%",#{operator},"%") AND
+		 	</if>
+             dvs.vendor_id = #{vendor_id}
+		 </where>
+	</select>
+	
+	<select id="getDBNotRelatedSpaceList" parameterType="DBSpaceSearch" resultType="DBSpaceBean">
+		select ds.space_id,ds.name,
+			 (select xc.city_name from xt_city xc  where xc.city_code = ds.city_code and xc.city_level = 4) as city_name,
+			 (select xc.district_name from xt_city xc  where xc.district_code = ds.district_code and xc.city_level = 5) as district_name,
+			 (select CONCAT(dmt1.name,"-",dmt.name) from db_media_type dmt  left join db_media_type dmt1 on dmt.father_id = dmt1.media_type_id
+				where ds.type = dmt.media_type_id) as media_name,
+				ds.number,ds.is_illumine,ds.relegation,ds.moble,
+		 ds.address,ds.show_type,ds.position, DATE_FORMAT(ds.create_time,'%Y-%m-%d %H:%i') as create_time,ds.imgs,xm.manager_name as operator
+		 
+		 from db_space ds left join  db_vendor_space dvs
+		  on dvs.space_id = ds.space_id AND dvs.vendor_id = #{vendor_id}
+		  left join xt_manager xm on dvs.create_user = xm.manager_id
+		 <where>
+		 	<if test="name !='' and name !=null">
+		 		ds.name LIKE CONCAT("%",#{name},"%") AND
+		 	</if>
+		 	<if test="province_code !='' and province_code !=null and province_code !='-1' ">
+		 		ds.province_code = #{province_code}  AND
+		 	</if>
+		 	<if test="city_code !='' and city_code !=null and city_code !='-1'">
+		 		ds.city_code = #{city_code}  AND
+		 	</if>
+		 	<if test="district_code !='' and district_code !=null and district_code !='-1' ">
+		 		ds.district_code = #{district_code}  AND
+		 	</if>
+		 	<if test="type !='' and type !=null and type !='-1' ">
+		 		ds.type = #{type}  AND
+		 	</if>
+		 	<if test="father_type !='' and father_type !=null and father_type !='-1' ">
+		 		ds.first_type = #{father_type}  AND
+		 	</if>
+		 	<if test="address !='' and address !=null">
+		 		ds.address LIKE CONCAT("%",#{address},"%") AND
+		 	</if>
+		 	<if test="create_btime != null and create_btime != ''">
+                ds.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00') AND
+            </if>
+            <if test="create_etime != null and create_etime != ''">
+                ds.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59') AND
+            </if>
+             <if test="operator !='' and operator !=null">
+		 		xm.manager_name LIKE CONCAT("%",#{operator},"%") AND
+		 	</if>
+            dvs.vendor_id IS NULL
+		 </where>
+		 order by  ds.space_id desc
+		 <if test="havePage == 1">
+            LIMIT #{start},#{rows}
+        </if>
+	</select>
+	
+	<select id="getDBNotRelatedSpaceCount" parameterType="DBSpaceSearch" resultType="int">
+		select  count(1)  from db_space ds left join
+		db_vendor_space dvs
+		on dvs.space_id = ds.space_id and dvs.vendor_id = #{vendor_id}
+		 left join xt_manager xm on dvs.create_user = xm.manager_id
+		 <where>
+		 	<if test="name !='' and name !=null">
+		 		ds.name LIKE CONCAT("%",#{name},"%") AND
+		 	</if>
+		 	<if test="province_code !='' and province_code !=null and province_code !='-1' ">
+		 		ds.province_code = #{province_code}  AND
+		 	</if>
+		 	<if test="city_code !='' and city_code !=null and city_code !='-1'">
+		 		ds.city_code = #{city_code}  AND
+		 	</if>
+		 	<if test="district_code !='' and district_code !=null and district_code !='-1' ">
+		 		ds.district_code = #{district_code}  AND
+		 	</if>
+		 	<if test="type !='' and type !=null and type !='-1' ">
+		 		ds.type = #{type}  AND
+		 	</if>
+		 	<if test="father_type !='' and father_type !=null and father_type !='-1' ">
+		 		ds.first_type = #{father_type}  AND
+		 	</if>
+		 	<if test="address !='' and address !=null">
+		 		ds.address LIKE CONCAT("%",#{address},"%") AND
+		 	</if>
+		 	<if test="create_btime != null and create_btime != ''">
+                ds.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00') AND
+            </if>
+            <if test="create_etime != null and create_etime != ''">
+                ds.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59') AND
+            </if>
+             <if test="operator !='' and operator !=null">
+		 		xm.manager_name LIKE CONCAT("%",#{operator},"%") AND
+		 	</if>
+             dvs.vendor_id IS NULL
+		 </where>
+	</select>
+	
+	<insert id="addVendorSpace" parameterType="HashMap">
+		insert into db_vendor_space (vendor_id,space_id,create_user) values 
+		<foreach collection="spacelist" item="item" index="index" separator=",">
+			(#{vendor_id},#{item},#{create_user})
+		</foreach>
+	</insert>
+	
+	<delete id="delSpace" parameterType="String">
+		delete ds.*,dvs.*,dr.*  from db_space ds , db_vendor_space dvs , db_record dr where ds.space_id = #{space_id} AND ds.space_id = dvs.space_id AND dvs.vendor_space_id = dr.vendor_space_id
+	</delete>
+	
+	<delete id="deleteVendorSpace" parameterType="String">
+		delete from db_vendor_space where vendor_space_id = #{vendor_space_id}
+	</delete>
+	
+	
+	<select id="getDBSpaceByID" parameterType="int" resultType="DBSpaceBean">
+		select ds.space_id,ds.name,
+				ds.province_code,ds.city_code,ds.district_code,first_type as father_type,
+			ds.type,ds.lng,ds.lat,ds.address,ds.show_type,ds.position,ds.number,ds.is_illumine,ds.relegation,ds.moble,ds.imgs,ds.ad_count
+		from db_space ds where space_id = #{space_id}
+		
+	</select>
+	
+	<select id="getDBVendorSpaceByID" parameterType="int" resultType="DBSpaceBean">
+		select dvs.vendor_id,dv.vendor_name,ds.name,ds.space_id from db_vendor_space dvs 
+		left join db_vendor dv on dvs.vendor_id = dv.vendor_id
+		left join db_space ds on dvs.space_id = ds.space_id
+		where dvs.vendor_space_id = #{vendor_space_id}	
+	</select>
+	
+	<update id="updateDBSpace" parameterType="DBSpaceBean">
+		update db_space 
+		<set>
+			name= #{name},
+			province_code = #{province_code},
+			city_code = #{city_code},
+			district_code = #{district_code},
+			first_type = #{father_type},
+			type = #{type},
+			lng = #{lng},
+			lat = #{lat},
+			address = #{address},
+		  	show_type = #{show_type},
+		  	position = #{position},
+		  	number = #{number},
+		  	is_illumine = #{is_illumine},
+		  	relegation = #{relegation},
+		  	moble = #{moble},
+		  	imgs = #{imgs},
+		  	update_user=#{operator},
+		  	ad_count = #{ad_count}
+		</set>
+		where space_id = #{space_id}
+	</update>
+	
+	<update id="updateADCount" parameterType="DBSpaceBean">
+		update db_space set ad_count = #{ad_count} where space_id = #{space_id}
+	</update>
+	
+	<select id="hangyefenleiStatistics" parameterType="DBRecordSearch" resultType="HashMap">
+		SELECT T.name as '主类别',
+		-- T.trade_type_id,
+		IFNULL(TTT.jiancetiaoci,0) as '监测条次',
+		IFNULL(TTT.zongshu,0) as '总违法条次',
+		IFNULL(TTT.yanzhongweifa,0) as '严重违法条次',
+		CONCAT(FORMAT(IFNULL(TTT.yanzhongweifa/TTT.jiancetiaoci,0),2),'%') as '严重违法率',
+		IFNULL(TTT.yibanweifa,0) as '一般违法条次',
+		CONCAT(FORMAT(IFNULL(TTT.yibanweifa/TTT.jiancetiaoci,0),2),'%') as '一般违法率'
+		FROM
+		(select  *  from db_trade_type dtt where dtt.`level` = 1 ) T
+		LEFT JOIN
+		(select dtr.father_id as trade_type_id,
+		SUM(jiancetiaoci) as jiancetiaoci,
+		SUM(zongshu) as zongshu,
+		SUM(yibanweifa) as yibanweifa,
+		SUM(yanzhongweifa) as yanzhongweifa
+		FROM 																								
+		db_record dr ,
+			(select 
+			count(1) as jiancetiaoci,dr.record_id,SUM(CASE WHEN dri.record_id is NOT NULL THEN 1 ELSE 0 END) as zongshu,
+			SUM(CASE WHEN di.illegal_level=0 THEN 1 ELSE 0 END) as yibanweifa,
+			SUM(CASE WHEN di.illegal_level=1 THEN 1 ELSE 0 END) as yanzhongweifa
+		
+			FROM db_record dr 
+			LEFT JOIN db_vendor_space dvs ON dr.vendor_space_id = dvs.vendor_space_id
+			LEFT JOIN db_trade_type dtt ON dr.trade = dtt.trade_type_id
+			LEFT JOIN db_record_illegal dri ON dr.record_id = dri.record_id
+			LEFT JOIN db_illegal di ON di.illegal_code = dri.illegal_code
+			where
+				dvs.vendor_id = #{vendor_id} 
+				<if test="monitor_btime != null and monitor_btime != ''">
+	                AND dr.monitor_time &gt;= CONCAT(#{monitor_btime}, ' 00:00:00') 
+	            </if>
+	            <if test="monitor_etime != null and monitor_etime != ''">
+	                AND dr.monitor_time &lt;= CONCAT(#{monitor_etime}, ' 23:59:59')
+	            </if>
+			GROUP BY dr.record_id
+		) TT,
+		db_trade_type dtr
+		WHERE dr.record_id = TT.record_id AND dr.trade = dtr.trade_type_id
+		GROUP BY dtr.father_id
+		) TTT
+		ON T.trade_type_id = TTT.trade_type_id
+		
+	</select>
+	
+	<select id="mediatypeStatisticsSQL"  parameterType="HashMap" resultType="java.lang.String">
+	    	SELECT
+	    		<if test="type == 0 ">
+	                GROUP_CONCAT(DISTINCT CONCAT('SUM(IF(TT.tag_area = ''',dt.id, ''', 1, 0)) AS ''', dt.name, ''''	))
+	            </if>
+			    <if test="type == 1 ">
+	                GROUP_CONCAT(DISTINCT CONCAT('SUM(IF(TT.tag_special = ''',dt.id, ''', 1, 0)) AS ''', dt.name, ''''	))
+	            </if>
+			FROM db_tag dt WHERE dt.type = #{type} AND dt.id in
+			<foreach collection="id" item="item"  separator="," open="(" close=")">
+				(#{item,jdbcType=VARCHAR})
+	        </foreach>
+			<!--0  区域检查 -->
+		    <!--1   专项检查 -->
+	 </select>
+	
+	<select id="mediatypeStatistics" parameterType="DBRecordSearch" resultType="java.util.LinkedHashMap">
+		SELECT 
+			   (select  dtt.name  from db_media_type dtt ,db_media_type dttt where dtt.media_type_id = dttt.father_id AND dttt.media_type_id = TTT.media_type_id ) as '一级媒体类型',
+			   T.name as '媒体类型',
+			   TTT.*				
+		FROM
+		(select  *  from db_media_type dtt where dtt.`level` = 2 )
+		T LEFT JOIN
+		(
+				select TT.type as media_type_id,
+				${ssql}
+				IFNULL(SUM(jiancetiaoci),0) as '监测条次',
+				IFNULL(SUM(zongshu),0) as '总违法条次',
+				IFNULL(SUM(yanzhongweifa),0) as '严重违法条次',
+				CONCAT(FORMAT(IFNULL(IFNULL(SUM(yanzhongweifa),0)/IFNULL(SUM(jiancetiaoci),0),0),2),'%') as '严重违法率',
+				IFNULL(SUM(yibanweifa),0) as '一般违法条次',
+				CONCAT(FORMAT(IFNULL(IFNULL(SUM(yibanweifa),0)/IFNULL(SUM(jiancetiaoci),0),0),2),'%') as '一般违法率'
+				FROM 																								
+					db_record dr ,
+					(
+					select 
+					count(1) as jiancetiaoci,
+					dr.record_id,
+					SUM(CASE WHEN dri.record_id is NOT NULL THEN 1 ELSE 0 END) as zongshu,
+					SUM(CASE WHEN di.illegal_level=0 THEN 1 ELSE 0 END) as yibanweifa,
+					SUM(CASE WHEN di.illegal_level=1 THEN 1 ELSE 0 END) as yanzhongweifa,
+					ds.first_type,
+					ds.type,
+					dr.tag_area,
+					dr.tag_special
+					
+					FROM db_record dr 
+					LEFT JOIN db_vendor_space dvs ON dr.vendor_space_id = dvs.vendor_space_id
+					LEFT JOIN db_space ds ON dvs.space_id = ds.space_id
+					LEFT JOIN db_media_type dtt ON ds.type = dtt.media_type_id
+					LEFT JOIN db_record_illegal dri ON dr.record_id = dri.record_id
+					LEFT JOIN db_illegal di ON di.illegal_code = dri.illegal_code
+					where
+						dvs.vendor_id = #{vendor_id} 
+						<if test="monitor_btime != null and monitor_btime != ''">
+			                AND dr.monitor_time &gt;= CONCAT(#{monitor_btime}, ' 00:00:00') 
+			            </if>
+			            <if test="monitor_etime != null and monitor_etime != ''">
+			                AND dr.monitor_time &lt;= CONCAT(#{monitor_etime}, ' 23:59:59')
+			            </if>
+					GROUP BY dr.record_id
+					) TT
+					
+					WHERE dr.record_id = TT.record_id 
+					GROUP BY TT.type
+		) TTT
+		ON T.media_type_id = TTT.media_type_id
+		WHERE TTT.media_type_id is not null
+		ORDER BY TTT.总违法条次  DESC
+	</select>
+		
+</mapper>

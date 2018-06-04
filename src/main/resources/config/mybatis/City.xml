@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.city">
+
+	<select id="getCityList" parameterType="CitySearch" resultType="CityBean">
+		select state_code,
+			national_code,
+			province_code,
+			province_name,
+			city_code,
+			city_name,
+			district_code,
+			district_name,
+			township_code,
+			township_name,
+			city_level
+			from XT_CITY 
+		<where>
+			<if test="state_code !=null and state_code !='' ">
+				state_code = #{state_code} and
+			</if>
+			<if test="national_code !=null and national_code !='' ">
+				national_code = #{national_code} and
+			</if>
+			<if test="province_code !=null and province_code !='' ">
+				province_code = #{province_code} and
+			</if>
+			<if test="city_code !=null and city_code !='' ">
+				city_code = #{city_code} and
+			</if>
+			<if test="district_code !=null and district_code !='' ">
+				district_code = #{district_code} and
+			</if>
+			<if test="city_level !=null and city_level !='' ">
+				city_level = #{city_level} and
+			</if>
+			<if test="city_name !=null and city_name !='' ">
+				city_name LIKE CONCAT('%',#{city_name},'%') and
+			</if>
+			1=1
+		</where>
+	</select>
+	
+	<select id="getCityTree" parameterType="CitySearch" resultType="CityBean" >
+		SELECT
+		  XC.state_code,
+		  XC.national_code,
+		  XC.province_code,
+		  XC.province_name,
+		  XC.city_code,
+		  XC.city_name,
+		  XC.district_code,
+		  XC.district_name,
+		  XC.township_code,
+		  XC.township_name,
+		  XC.city_level
+		FROM XT_CITY XC
+		WHERE 1=1
+		<if test="city_level !=null and city_level !='' ">
+			and city_level = #{city_level}
+		</if>
+		<if test="havePage == 1">
+            limit #{start},#{rows}
+        </if>
+	</select>
+	
+	<select id="getCityByInput" parameterType="String" resultType="CityBean">
+		SELECT
+		DISTINCT
+		  XC.province_code,
+		  XC.province_name,
+		  XC.city_code,
+		  XC.city_name,
+		  XC.district_code,
+		  XC.district_name,
+		  XC.city_level
+		FROM XT_CITY XC
+		WHERE (XC.city_name LIKE CONCAT('%', #{input}, '%') AND XC.city_level = 4)
+		OR (XC.district_name LIKE CONCAT('%', #{input}, '%') AND XC.city_level = 5)
+	</select>
+</mapper>

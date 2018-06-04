@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.potential">
+	<select id="count" parameterType="PotentialSearch" resultType="int">
+		SELECT
+		  COUNT(*) 
+       	FROM APP_POTENTIAL AP  left join XT_CITY XC 
+        ON AP.city = XC.city_code and XC.city_level = 4
+		left join XT_CITY XCC 
+				ON AP.city = XCC.district_code and XCC.city_level = 5
+		WHERE AP.is_del = 0
+		<if test="name != null and name != ''">
+			AND AP.name LIKE CONCAT('%',#{name},'%')
+		</if>
+		<if test="moble != null and moble != ''">
+			AND AP.moble = #{moble}
+		</if>
+		<if test="qq != null and qq != ''">
+			AND AP.QQ = #{qq}
+		</if>
+		<choose>
+        	<when test="province_code != null and province_code != '' and (city_code == null or city_code == '')">
+        		AND XC.province_code = #{province_code}
+        	</when>
+        	<when test="city_code != null and city_code != '' and (district_code == null or district_code == '')">
+        		AND XC.city_code = #{city_code}
+        	</when>
+        	<when test="district_code != null and district_code != ''">
+        		AND XC.district_code = #{district_code} 
+        	</when>
+        </choose>
+		<if test="date_start != null and date_start != ''">
+			AND AP.last_touch_date >= #{date_start}
+		</if>
+		<if test="date_end != null and date_end != ''">
+			AND AP.last_touch_date &lt;= CONCAT(#{date_end}, ' 23:59:59')
+		</if>
+	</select>
+	
+	<select id="list" parameterType="PotentialSearch" resultType="PotentialBean">
+		SELECT
+		  AP.potential_id,
+		  AP.name,
+		  AP.sex,
+		  case when XC.city_name is null then XCC.city_name else XC.city_name end as city_name,
+		  case when XC.city_code is null then XCC.city_code else XC.city_code end as city_code,
+		  XCC.district_name,
+		  XCC.district_code,
+		  AP.moble,
+		  AP.qq AS qq,
+		  AP.last_touch_date,
+		  AP.create_time,
+		  AP.remark
+		FROM APP_POTENTIAL AP  left join XT_CITY XC 
+        ON AP.city = XC.city_code and XC.city_level = 4
+		left join XT_CITY XCC 
+				ON AP.city = XCC.district_code and XCC.city_level = 5
+		WHERE AP.is_del = 0
+		<if test="name != null and name != ''">
+			AND AP.name LIKE CONCAT('%',#{name},'%')
+		</if>
+		<if test="moble != null and moble != ''">
+			AND AP.moble = #{moble}
+		</if>
+		<if test="qq != null and qq != ''">
+			AND AP.QQ = #{qq}
+		</if>
+		<choose>
+        	<when test="province_code != null and province_code != '' and (city_code == null or city_code == '')">
+        		AND XC.province_code = #{province_code}
+        	</when>
+        	<when test="city_code != null and city_code != '' and (district_code == null or district_code == '')">
+        		AND XC.city_code = #{city_code}
+        	</when>
+        	<when test="district_code != null and district_code != ''">
+        		AND XC.district_code = #{district_code} 
+        	</when>
+        </choose>
+		<if test="date_start != null and date_start != ''">
+			AND AP.last_touch_date >= #{date_start}
+		</if>
+		<if test="date_end != null and date_end != ''">
+			AND AP.last_touch_date &lt;= CONCAT(#{date_end}, ' 23:59:59')
+		</if>
+		<choose>
+			<when test="sidx != null and sidx != '' and sidx == 'last_touch_date'">
+				ORDER BY AP.last_touch_date ${sord}
+			</when>
+			<otherwise>
+				ORDER BY AP.last_touch_date DESC
+			</otherwise>
+		</choose>
+		<if test="havePage == 1">
+        	LIMIT #{start} , #{rows}
+        </if>
+	</select>
+	
+ 	<select id="get" parameterType="PotentialSearch" resultType="PotentialBean">
+ 		SELECT
+		  AP.potential_id,
+		  AP.name,
+		  AP.sex,
+		  AP.city,
+		  AP.moble,
+		  AP.QQ AS qq,
+		  AP.last_touch_date,
+		  AP.create_time,
+		  AP.remark
+		FROM APP_POTENTIAL AP
+		WHERE AP.is_del = 0
+		AND AP.moble = #{moble}
+ 	</select>
+	
+	<delete id="del" parameterType="String">
+		DELETE FROM APP_POTENTIAL WHERE potential_id = #{potential_id}
+	</delete>
+	
+	<update id="modify" parameterType="PotentialBean">
+		UPDATE APP_POTENTIAL
+		SET 
+		    QQ = #{qq},
+		    last_touch_date = #{last_touch_date},
+		    remark = #{remark}
+		WHERE potential_id = #{potential_id}
+	</update>
+ 		
+ 	<insert id="add" parameterType="PotentialBean" useGeneratedKeys="true" keyProperty="potential_id">
+ 		INSERT INTO APP_POTENTIAL(
+			name,
+			sex,
+			city,
+			moble,
+			QQ,
+			last_touch_date,
+			remark)
+ 		VALUES(#{name}, #{sex}, #{city}, #{moble}, #{qq},NOW(), #{remark})
+ 	</insert>
+ 	
+</mapper>

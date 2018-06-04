@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.survey">
+	<select id="getSurveyList"  parameterType="SurveySearch" resultType="SurveyListBean">
+		SELECT
+		  ss.task_id,
+		  ss.name,
+		  cv.vendor_name,
+		  stt.name AS task_type_name,
+		  cc.moble as create_user,
+		  xm.manager_name as agent,
+		  ss.execute_times,
+		  ss.salary,
+		  ss.plat_fee,
+		  ss.do_btime,
+		  ss.do_etime,
+		  ss.is_audit,
+		  ss.status,
+		  ss.remark,
+		  ss.reject_reason,
+		  ss.audit_times,
+		  ss.vendor_id
+		FROM s_survey ss
+		  LEFT JOIN c_vendor cv ON ss.vendor_id = cv.vendor_id
+		  LEFT JOIN s_task_type stt ON ss.task_type_id = stt.task_type_id
+		  LEFT JOIN c_customer cc ON ss.create_user = cc.customer_id 
+		  LEFT JOIN xt_manager xm on ss.agent = xm.manager_id
+	    <where>
+	   		<if test="task_id != null and task_id != ''">
+				ss.task_id = #{task_id} AND
+			</if>
+	    	<if test="name != null and name != ''">
+				ss.name LIKE CONCAT('%',#{name},'%') AND
+			</if>
+			<if test="task_type_id !=null and task_type_id !='' and task_type_id != '-1' ">
+				ss.task_type_id = #{task_type_id} AND
+			</if>
+			<if test="status !=null and status !='' and status != '-1' ">
+				ss.status = #{status} AND
+			</if>
+			<if test="vendor_name != null and vendor_name != ''">
+				cv.vendor_name LIKE CONCAT("%",#{vendor_name},"%")  AND
+			</if>
+			<if test="create_btime != null and create_btime != ''">
+                ss.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00') AND
+            </if>
+            <if test="create_etime != null and create_etime != ''">
+                ss.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59') AND
+            </if>
+			ss.is_del = 0 AND (ss.create_type &lt;&gt; 1 OR (ss.create_type = 1 AND ss.status &lt;&gt; 0 ))
+			<!-- 需要上线审核的任务is_desc 为升序  -->
+			<if test='is_desc == "1"'>
+		    	AND ss.status = 1
+		    </if>
+		</where>
+	    ORDER BY ss.create_time
+	    <if test='is_desc == "0"'>
+	    	DESC
+	    </if>
+	    <if test="havePage == 1">
+            LIMIT #{start},#{rows}
+        </if>
+	</select>
+	
+	
+	<select id="getSurveyCount" parameterType="SurveySearch" resultType="int" >
+		select 	count(1) from s_survey ss
+		LEFT JOIN c_vendor cv ON ss.vendor_id = cv.vendor_id
+	    <where>
+	   		<if test="task_id != null and task_id != ''">
+				ss.task_id = #{task_id} and
+			</if>
+	    	<if test="name != null and name != ''">
+				ss.name LIKE CONCAT('%',#{name},'%') and
+			</if>
+			<if test="task_type_id !=null and task_type_id !='' and task_type_id != '-1' ">
+				ss.task_type_id = #{task_type_id} and
+			</if>
+			<if test="status !=null and status !='' and status != '-1' ">
+				ss.status = #{status} and
+			</if>
+			<if test="vendor_name != null and vendor_name != ''">
+				cv.vendor_name LIKE CONCAT("%",#{vendor_name},"%")  AND
+			</if>
+			<if test="create_btime != null and create_btime != ''">
+                ss.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00') AND
+            </if>
+            <if test="create_etime != null and create_etime != ''">
+                ss.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59') AND
+            </if>
+				ss.is_del = 0 AND (ss.create_type &lt;&gt; 1 OR (ss.create_type = 1 AND ss.status &lt;&gt; 0 ))
+			<!-- 需要上线审核的任务is_desc 为升序  -->
+			<if test='is_desc == "1"'>
+		    	AND ss.status = 1
+		    </if>
+		</where>
+	</select>
+	
+	<insert id="addSurvey" parameterType="SurveyBean"  useGeneratedKeys="true" keyProperty="task_id" >
+		insert into s_survey(name,descript,task_type_id,salary,execute_times,do_btime,do_etime,publish_user,publish_time,is_audit,audit_times,
+					plat_fee,status,vendor_id,remark,agent,create_user,create_type,is_exclusive)
+			values(#{name},#{descript},#{task_type_id},#{salary},#{execute_times},#{do_btime},#{do_etime},#{publish_user},#{publish_time},#{is_audit},#{audit_times},
+					#{plat_fee},#{status},#{vendor_id},#{remark},#{agent},#{create_user},#{create_type},#{is_exclusive} )				
+	</insert>
+	
+	<update id="updateSurvey" parameterType="SurveyBean">
+		update s_survey ss left join s_survey_restrain ssr on ss.task_id = ssr.task_id
+		<set>
+			ss.name = #{name},
+			ss.descript = #{descript},
+			ss.salary = #{salary},
+			ss.plat_fee = #{plat_fee},
+			ss.execute_times = #{execute_times},
+			ss.do_btime = #{do_btime},
+			ss.do_etime = #{do_etime},
+			ss.is_audit = #{is_audit},
+			ss.audit_times = #{audit_times},
+			ss.is_exclusive = #{is_exclusive},
+			ssr.group_id = #{trb.group_id},
+			ssr.sex = #{trb.sex}
+		</set>	
+		where ss.task_id = #{task_id} and ss.vendor_id = #{vendor_id}
+	</update>
+	
+	<update id="updateTaskRemark" parameterType="SurveyBean" >
+		update s_survey set remark = #{remark} where task_id = #{task_id}
+	</update>
+	
+	<delete id="deleteSurveyExt" parameterType="string">
+		delete sst,sso,ssc 
+		from s_survey ss
+	    left join s_survey_topic sst on ss.task_id = sst.task_id
+	    left join s_survey_option sso on ss.task_id = sso.task_id
+	    left join s_survey_city ssc on ss.task_id = ssc.task_id
+		where ss.task_id = #{task_id} 
+	</delete>
+	
+	<delete id="deleteSurvey" parameterType="String">
+		delete ss,ssr,sst,sso,ssc from s_survey ss
+	    left join s_survey_restrain ssr on ss.task_id = ssr.task_id
+	    left join s_survey_topic sst on ss.task_id = sst.task_id
+	    left join s_survey_option sso on ss.task_id = sso.task_id
+	    left join s_survey_city ssc on ss.task_id = ssc.task_id
+		where 
+		ss.task_id = #{task_id}  and ss.status = 0 
+	</delete>
+	
+	<update id="publishSurvey" parameterType="HashMap">
+		update s_survey  set status = #{status},publish_user = #{publish_user},publish_time = now()
+		where task_id = #{task_id} 
+	</update>
+	
+	<insert id="addSurveyTopics" parameterType="HashMap">
+		insert into s_survey_topic(task_id,cid,sort,field_type,label,descript,required,img_url,skipto,answer_rules,execute_rule,execute_img) values
+		<foreach collection="topicList" item="item" separator=","  index="index">
+		 (#{task_id},#{item.cid},#{item.sort},#{item.field_type},#{item.label},#{item.descript},#{item.required},
+		 	#{item.img_url},#{item.skipto},#{item.answer_rules},#{item.execute_rule},#{item.execute_img})
+		</foreach>
+	</insert>
+	
+	<insert id="addSurveyTopic" parameterType="TaskTopicBean" useGeneratedKeys="true" keyProperty="topic_id">
+		insert into s_survey_topic(task_id,cid,sort,field_type,label,descript,required,img_url,skipto,answer_rules,execute_rule,execute_img) values
+		 (#{task_id},#{cid},#{sort},#{field_type},#{label},#{descript},#{required},#{img_url},#{skipto},#{answer_rules},#{execute_rule},#{execute_img})
+	</insert>
+	
+	<insert id="addSurveyOptions" parameterType="HashMap" >
+		insert into s_survey_option(task_id,topic_id,option_title,option_value,checked,img_url,skipto) values
+		<foreach collection="optionList" item="item" separator=","  index="index">
+		 (#{task_id},#{item.topic_id},#{item.label},#{item.option_value},#{item.checked},#{item.img_url},#{item.skipto})
+		</foreach>
+	</insert>
+	
+	<insert id="addSurveyRestrain" parameterType="TaskRestrainBean">
+		insert into s_survey_restrain(task_id,water_marker,group_id,sex )
+		values (#{task_id},#{water_marker},#{group_id},#{sex} )
+	</insert>
+	
+	<insert id="addSurveyCity" parameterType="HashMap">
+		insert into s_survey_city (task_id,city_code,city_level) values
+		<foreach collection="cities" item="item" separator=","  index="index">
+		 (#{task_id},#{item.city_code},#{item.city_level})
+		</foreach>
+	</insert>
+	
+	<select id="getSurveyById" parameterType="String" resultMap="SurveyInfo">
+	  select ss.task_id,ss.name,ss.descript,ss.task_type_id,ss.salary,ss.execute_times,ss.vendor_id,ss.create_user,
+	  		 DATE_FORMAT(ss.do_btime,'%Y-%m-%d %H:%i') as do_btime,DATE_FORMAT(ss.do_etime,'%Y-%m-%d %H:%i') as do_etime, ss.is_audit,ss.audit_times,
+			 ssr.group_id,ssr.sex,
+			 ssc.city_code,ssc.city_level,
+			 stt.name task_type_name,
+			 sst.cid,sst.sort,sst.field_type,sst.label,sst.descript description,sst.required,sst.img_url,sst.skipto,sst.answer_rules,sst.execute_rule,sst.execute_img,
+			 sso.option_title,sso.option_value,sso.checked,sso.img_url image,sso.skipto skip_to
+		from s_survey ss
+		left join s_task_type stt on ss.task_type_id = stt.task_type_id
+		left join s_survey_city ssc on ss.task_id = ssc.task_id
+		left join s_survey_restrain ssr on ss.task_id = ssr.task_id
+		left join s_survey_topic sst on ss.task_id = sst.task_id
+		left join s_survey_option sso on sst.topic_id = sso.topic_id
+		where ss.task_id = #{task_id} and ss.is_del=0
+	</select>
+	
+	<resultMap type="SurveyBean" id="SurveyInfo">
+		<id column="task_id" property="task_id"></id>
+		<result column="name" property="name" />
+		<result column="descript" property="descript" />
+		<result column="task_type_id" property="task_type_id" />
+		<result column="task_type_name" property="task_type_name" />
+		<result column="salary" property="salary" />
+		<result column="execute_times" property="execute_times" />
+		<result column="do_btime" property="do_btime" />
+		<result column="do_etime" property="do_etime" />
+		<result column="is_audit" property="is_audit"/>
+		<result column="audit_times" property="audit_times"/>
+		<result column="vendor_id" property="vendor_id"/>
+		<result column="create_user" property="create_user"/>
+		<association property="trb" javaType="TaskRestrainBean" >
+			<result column="group_id" property="group_id"/>
+			<result column="sex" property="sex"/>
+		</association>
+		<collection property="topicList" ofType="TaskTopicBean">
+			<result column="cid" property="cid"/>
+			<result column="sort" property="sort"/>
+			<result column="field_type" property="field_type"/>
+			<result column="label" property="label"/>
+			<result column="description" property="descript"/>
+			<result column="required" property="required"/>
+			<result column="img_url" property="img_url"/>
+			<result column="skipto" property="skipto"/>
+			<result column="answer_rules" property="answer_rules"/>
+			<result column="execute_rule" property="execute_rule"/>
+			<result column="execute_img" property="execute_img"/>
+			<collection property="options" ofType="TaskOptionBean">
+				<result column="option_title" property="label" />
+				<result column="option_value" property="option_value" />
+				<result column="checked" property="checked" />
+				<result column="image" property="img_url" />
+				<result column="skip_to" property="skipto" />
+			</collection>
+		</collection>
+		<collection property="cityList" ofType="CityBean" >
+			<result property="city_code" column="city_code" />
+			<result property="city_level"  column="city_level" />
+		</collection>
+	</resultMap>
+	
+	<select id="getTaskMainInfo" parameterType="String" resultType="SurveyBean">
+		select task_id,name,vendor_id,create_user,agent
+		from s_survey
+		where task_id = #{task_id}
+	</select>
+	
+</mapper>

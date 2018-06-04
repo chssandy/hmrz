@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.springTask">
+
+	<select id="fixMonitorTaskStatus" statementType="CALLABLE">
+		<![CDATA[  
+    		{call P_FIX_MONITOR_TASK_STATUS()}  
+  		]]>  
+	</select>
+	
+	<select id="fixInspecteTaskStatus" statementType="CALLABLE">
+		<![CDATA[  
+    		{call P_FIX_INSPECTE_TASK_STATUS()}  
+  		]]>  
+	</select>
+	
+	<select id="fixMediaTaskStatus" statementType="CALLABLE">
+		<![CDATA[  
+    		{call P_FIX_MEDIA_TASK_STATUS()}  
+  		]]>  
+	</select>
+	
+	<select id="fixSurveyTaskStatus" statementType="CALLABLE">
+		<![CDATA[  
+    		{call P_FIX_SURVEY_TASK_STATUS()}  
+  		]]>  
+	</select>
+	
+  	<select id="executeCreditCaculation" statementType="CALLABLE"> 
+    	<![CDATA[  
+    		{call P_CREDIT_CACULATION()}  
+  		]]>  
+    </select>
+    
+  	
+  	<select id="getSignUserList"  parameterType="UserSearch" resultType="UserBean">
+		SELECT
+		  au.user_id,
+		  au.moble,
+		  au.registration_id,
+		  au.platform
+		FROM app_sign_in agi
+		  LEFT JOIN app_sign_in asi
+		    ON agi.user_id = asi.user_id
+		    AND TO_DAYS(asi.create_time) = TO_DAYS(NOW())
+		  LEFT JOIN app_user au
+		    ON agi.user_id = au.user_id
+		WHERE TO_DAYS(agi.create_time) = TO_DAYS(NOW()) - 1
+		AND asi.create_time IS NULL 
+		AND au.registration_id IS NOT NULL 
+		AND au.registration_id &lt;&gt; ''
+   		<if test="platform != null and platform != ''">
+			AND au.platform = #{platform}
+		</if>
+		<if test="brand != null and brand != ''">
+            AND au.brand = #{brand}
+        </if>
+	    ORDER BY au.user_id
+	    <if test="havePage == 1">
+            LIMIT #{start},#{rows}
+        </if>
+	</select>
+	
+	
+	<select id="getSignUserCount" parameterType="UserSearch" resultType="int" >
+		SELECT
+		  COUNT(au.user_id)
+		FROM app_sign_in agi
+		  LEFT JOIN app_sign_in asi
+		    ON agi.user_id = asi.user_id
+		    AND TO_DAYS(asi.create_time) = TO_DAYS(NOW())
+		  LEFT JOIN app_user au
+		    ON agi.user_id = au.user_id
+		WHERE TO_DAYS(agi.create_time) = TO_DAYS(NOW()) - 1
+		AND asi.create_time IS NULL
+   		<if test="platform != null and platform != ''">
+			AND au.platform = #{platform}
+		</if>
+		<if test="brand != null and brand != ''">
+            AND au.brand = #{brand}
+        </if>
+	</select>
+</mapper>

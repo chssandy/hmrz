@@ -1,0 +1,76 @@
+<link rel="stylesheet" href="resource/plugins/zTree_v3/css/zTreeStyle/zTreeStyle.css" type="text/css">
+<script type="text/javascript" src="resource/plugins/zTree_v3/js/jquery.ztree.all-3.5.min.js"></script>
+<div class="page-content">
+	<div style="margin-bottom: 10px;" class="form-horizontal">
+		<div class="span7" id="acct-password-row" style="width: 50%;float: left;">
+			<div class="form-group">
+				<label for="roleName" class="col-sm-3 control-label no-padding-right"> 角色名 </label>
+				<div class="col-sm-9">
+					<input type="text" class="col-xs-10 col-sm-5 span4" placeholder="角色名" id="search_name">
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="page-header" style="margin-bottom: 40px">
+		<h1>
+			<span class="header_button_span " >
+				<button class="btn btn-primary" id="search-button">查询</button>&nbsp;&nbsp;
+				<button class="btn" id="add-button">新增</button>&nbsp;&nbsp;
+				<button class="btn" id="edit-button">修改</button>&nbsp;&nbsp;
+				<button class="btn" id="del-buttion">删除</button>&nbsp;&nbsp;
+			</span>
+		</h1>
+	</div>
+
+	<div class="row">
+		<div class="col-xs-12">
+			<table id="roleTables"></table>
+			<div id="pager"></div>
+		</div>
+	</div>
+
+</div>
+
+
+<div id='roleEdit' style="display: none">
+	<form id="roleForm" name="roleForm" class="form-horizontal">
+		<div class="form-group">
+			<label class="col-sm-3 control-label no-padding-right" for="form-field-1">角色名</label>
+
+			<div class="col-sm-9">
+				<input type="text" id="r_name" name="role_name" placeholder="角色名" class="col-xs-10 col-sm-7" data-rule="required"/>
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="col-sm-3 control-label no-padding-right" for="form-field-1">备 注</label>
+
+			<div class="col-sm-9">
+				<textarea class="col-xs-10 col-sm-11" row="3" id="remark" name="remark" style="height:70px" placeholder="备注"></textarea>
+			</div>
+			<hr/>
+		</div>
+
+		<div class="clearfix form-actions" style="margin-bottom: 0px; margin-top: 0px">
+			<div class="col-md-offset-3 col-md-9" style="margin-left: 15%">
+				<button class="btn btn-info" type="button" id="doSubmit">
+					<i class="icon-ok bigger-110"></i>
+					保存
+				</button>
+				&nbsp; &nbsp; &nbsp;
+				<button class="btn" type="reset" id="doReset">
+					<i class="icon-undo bigger-110"></i>
+					重置
+				</button>
+			</div>
+		</div>
+	</form>
+</div>
+
+<div id="setModule" style="display: none">
+	<div class="zTreeDemoBackground left">
+		<ul id="moduleTree" class="ztree"></ul>
+	</div>
+</div>
+
+<script src="pages/system/role/role.js"></script>

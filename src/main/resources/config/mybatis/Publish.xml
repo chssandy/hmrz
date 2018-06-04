@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.publish">
+	
+	
+	<update id="pass" parameterType="HashMap">
+		update s_${type} set status = 2,publish_user = #{publish_user},publish_time = now()
+		where task_id = #{task_id} AND status = 1
+	</update>
+	
+	<update id="reject" parameterType="HashMap">
+		update s_${type} set status = 3,publish_user = #{publish_user},publish_time = now(),reject_reason = #{reject_reason}
+		where task_id = #{task_id} AND status = 1
+	</update>
+</mapper>

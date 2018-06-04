@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.vendorProject">
+	<select id="getVendorProjectList" parameterType="VendorProjectSearch" resultType="VendorProjectBean">
+        SELECT
+        	CVP.serial_number,
+        	CVP.project_id,
+        	CVP.vendor_id,
+        	CVP.project_name,
+        	CONCAT_WS("-",STT.name,STTT.name) as task_type,
+        	CVP.project_name,
+        	CVP.remark,
+        	CVP.task_biz,
+        	CVP.create_time,
+        	(select moble from c_customer cc where cc.customer_id = CVP.create_user) as create_user,
+        	(select manager_name from xt_manager xm where xm.manager_id = CVP.agent) as agent,
+        	CVP.create_type
+        FROM 
+        	C_VENDOR_PROJECT CVP 
+        	LEFT JOIN S_TASK_TYPE STT
+        		ON CVP.task_biz = STT.task_type_id
+        	LEFT JOIN S_TASK_TYPE STTT
+        		ON CVP.task_type_id = STTT.task_type_id
+        WHERE
+            CVP.is_del = 0
+            <if test="vendor_id_search != null and vendor_id_search != ''">
+                AND CVP.vendor_id =#{vendor_id_search}
+            </if>
+            <if test="project_name_search != null and project_name_search != ''">
+                AND CVP.project_name LIKE CONCAT('%',#{project_name_search},'%')
+            </if>
+            <if test="task_biz_search != null and task_biz_search != ''">
+                AND CVP.task_biz =#{task_biz_search}
+            </if>
+            <if test="serial_number_search != null and serial_number_search != ''">
+                AND CVP.serial_number =#{serial_number_search}
+            </if>
+            <if test="task_type_search != null and task_type_search != ''">
+                AND CVP.task_type LIKE CONCAT('%',#{task_type_search},'%')
+            </if>
+            <if test="task_type_id_search != null and task_type_id_search != ''">
+                AND CVP.task_type_id =#{task_type_id_search}
+            </if>
+			<if test="create_btime !=null and create_btime !='' ">
+				AND CVP.create_time &gt;= concat(#{create_btime}, " 00:00:00") 
+			</if>
+			<if test="create_etime !=null and create_etime !='' ">
+				AND CVP.create_time &lt;= concat(#{create_etime}, " 23:59:59") 
+			</if>
+			<if test="remark_search != null and remark_search != ''">
+                AND CVP.remark LIKE CONCAT('%',#{remark_search},'%')
+            </if>
+			ORDER BY CVP.create_time desc
+		    <if test="havePage == 1">
+	            limit #{start},#{rows}
+	        </if>
+	</select>
+	
+	<select id="getVendorProjectCount" parameterType="VendorProjectSearch" resultType="int">
+        SELECT
+        	count(CVP.project_id)
+        FROM 
+        	C_VENDOR_PROJECT CVP
+        WHERE
+            CVP.is_del = 0
+            <if test="vendor_id_search != null and vendor_id_search != ''">
+                AND CVP.vendor_id =#{vendor_id_search}
+            </if>
+            <if test="project_name_search != null and project_name_search != ''">
+                AND CVP.project_name LIKE CONCAT('%',#{project_name_search},'%')
+            </if>
+            <if test="task_biz_search != null and task_biz_search != ''">
+                AND CVP.task_biz =#{task_biz_search}
+            </if>
+            <if test="serial_number_search != null and serial_number_search != ''">
+                AND CVP.serial_number =#{serial_number_search}
+            </if>
+            <if test="task_type_search != null and task_type_search != ''">
+                AND CVP.task_type LIKE CONCAT('%',#{task_type_search},'%')
+            </if>
+            <if test="task_type_id_search != null and task_type_id_search != ''">
+                AND CVP.task_type_id =#{task_type_id_search}
+            </if>
+			<if test="create_btime !=null and create_btime !='' ">
+				AND CVP.create_time &gt;= concat(#{create_btime}, " 00:00:00") 
+			</if>
+			<if test="create_etime !=null and create_etime !='' ">
+				AND CVP.create_time &lt;= concat(#{create_etime}, " 23:59:59") 
+			</if>
+			<if test="remark_search != null and remark_search != ''">
+                AND CVP.remark LIKE CONCAT('%',#{remark_search},'%')
+            </if>
+	</select>
+	
+	<select id="getMonitorProjectCost" parameterType="VendorProjectSearch" resultType="String">
+        SELECT
+        	IFNULL(sum(sm.salary),0)
+        FROM 
+        	C_VENDOR_PROJECT CVP,C_VENDOR_PROJECT_TASK CVPT,s_monitor sm
+        WHERE
+            CVP.is_del = 0
+            AND CVP.task_biz = 1
+            AND CVP.project_id = CVPT.project_id
+            AND CVPT.task_id = sm.task_id
+            <if test="vendor_id_search != null and vendor_id_search != ''">
+                AND CVP.vendor_id =#{vendor_id_search}
+            </if>
+            <if test="project_name_search != null and project_name_search != ''">
+                AND CVP.project_name LIKE CONCAT('%',#{project_name_search},'%')
+            </if>
+            <if test="task_biz_search != null and task_biz_search != ''">
+                AND CVP.task_biz =#{task_biz_search}
+            </if>
+            <if test="serial_number_search != null and serial_number_search != ''">
+                AND CVP.serial_number =#{serial_number_search}
+            </if>
+            <if test="task_type_search != null and task_type_search != ''">
+                AND CVP.task_type LIKE CONCAT('%',#{task_type_search},'%')
+            </if>
+            <if test="task_type_id_search != null and task_type_id_search != ''">
+                AND CVP.task_type_id =#{task_type_id_search}
+            </if>
+			<if test="create_btime !=null and create_btime !='' ">
+				AND CVP.create_time &gt;= concat(#{create_btime}, " 00:00:00") 
+			</if>
+			<if test="create_etime !=null and create_etime !='' ">
+				AND CVP.create_time &lt;= concat(#{create_etime}, " 23:59:59") 
+			</if>
+			<if test="remark_search != null and remark_search != ''">
+                AND CVP.remark LIKE CONCAT('%',#{remark_search},'%')
+            </if>
+	</select>
+	
+	<insert id="addVendorProject" parameterType="VendorProjectBean" useGeneratedKeys="true" keyProperty="project_id">
+		INSERT INTO C_VENDOR_PROJECT(
+			vendor_id,
+			serial_number,
+		 	task_biz,
+		 	<if test="task_type_id != null and task_type_id != ''">
+            task_type_id,
+        	</if>
+		 	project_name,
+			remark,
+			create_user,
+			create_type
+		 )
+		VALUE (#{vendor_id},#{serial_number}, #{task_biz},
+		<if test="task_type_id != null and task_type_id != ''">
+             #{task_type_id},
+        </if>
+		#{project_name}, #{remark},#{create_user},1)
+    </insert>
+    
+	<update id="delVendorProject" parameterType="java.util.Map">
+		UPDATE C_VENDOR_PROJECT set is_del = 1	
+		WHERE project_id in
+		<foreach collection="id" item="item"  separator="," open="(" close=")">
+		(#{item,jdbcType=VARCHAR})
+         </foreach>
+	</update>
+	<!-- 删除项目的时候，同时删除项目下包含的任务关系 -->
+    <delete id="delVendorProjectAndTask" parameterType="java.util.Map">
+        DELETE FROM C_VENDOR_PROJECT_TASK
+        WHERE project_id in
+		<foreach collection="id" item="item"  separator="," open="(" close=")">
+		(#{item,jdbcType=VARCHAR})
+         </foreach>
+    </delete>
+    
+    <select id="getVendorProject" parameterType="VendorProjectSearch" resultType="VendorProjectBean">
+		SELECT
+		  CVP.project_id,
+		  CVP.serial_number,
+		  CVP.vendor_id,
+		  CV.vendor_name,
+		  CVP.vendor_id,
+		  CVP.task_biz,
+		  CVP.task_type,
+		  CVP.task_type_id,
+		  CONCAT_WS("-",STT.name,STTT.name) as task_type_name,
+		  CVP.project_name,
+		  CVP.create_time,
+		  CVP.remark
+		FROM C_VENDOR_PROJECT  CVP LEFT JOIN C_VENDOR CV  ON CVP.vendor_id = CV.vendor_id
+		LEFT JOIN S_TASK_TYPE STT
+        		ON CVP.task_biz = STT.task_type_id
+        	LEFT JOIN S_TASK_TYPE STTT
+        		ON CVP.task_type_id = STTT.task_type_id
+		WHERE 1=1 
+			<if test="project_id_search != null and project_id_search != ''">
+                AND CVP.project_id =#{project_id_search}
+            </if>
+            <if test="serial_number_search != null and serial_number_search != ''">
+                AND CVP.serial_number =#{serial_number_search}
+            </if>
+	</select>
+	
+	<update id="modifyVendorProject" parameterType="VendorProjectBean">
+		UPDATE C_VENDOR_PROJECT 
+		SET
+		 project_name = #{project_name},
+		 remark = #{remark}
+		WHERE
+		  project_id = #{project_id}
+	</update>
+	
+	<!-- 单独删除项目下包含的任务关系 -->
+    <delete id="delVendorProjectTask" parameterType="java.util.Map">
+        DELETE cvpt.* FROM c_vendor_project_task cvpt
+        WHERE 
+        cvpt.project_task_id in
+		<foreach collection="id" item="item"  separator="," open="(" close=")">
+		(#{item,jdbcType=VARCHAR})
+         </foreach>
+    </delete>
+    
+    
+    <select id="getVendorProjectTaskList" parameterType="VendorProjectTaskSearch" resultType="ProjectTaskBean">
+        SELECT
+        	CVPT.project_task_id,
+        	CVPT.task_id,
+        	SM.name,
+        	SM.salary,
+        	SM.execute_times,
+        	SM.create_time,
+        	(select cc.moble from c_customer cc where cc.customer_id = SM.create_user) as create_user,
+        	SM.create_type,
+        	SM.status
+        FROM 
+        	C_VENDOR_PROJECT_TASK CVPT 
+        		LEFT JOIN S_${type_search} SM ON CVPT.task_id = SM.task_id 
+        WHERE
+        	1=1 
+        	AND CVPT.task_biz = #{task_biz_search}
+            <if test="project_id_search != null and project_id_search != ''">
+                AND CVPT.project_id =#{project_id_search}
+            </if>
+            <if test="task_name_search != null and task_name_search != ''">
+                AND SM.name LIKE CONCAT('%',#{task_name_search},'%')
+            </if>
+            <if test="task_id_search != null and task_id_search != ''">
+                AND CVPT.task_id =#{task_id_search}
+            </if>
+            <if test="status_search != null and status_search != ''">
+                AND SM.status =#{status_search}
+            </if>
+			ORDER BY CVPT.create_time desc
+		    <if test="havePage == 1">
+	            limit #{start},#{rows}
+	        </if>
+	</select>
+	
+	<select id="getVendorProjectTaskCount" parameterType="VendorProjectTaskSearch" resultType="int">
+        SELECT
+        	count(CVPT.task_id)
+        FROM 
+        	C_VENDOR_PROJECT_TASK CVPT LEFT JOIN s_${type_search} SM 
+        	ON  CVPT.task_biz = #{task_biz_search} AND CVPT.task_id = SM.task_id 
+        WHERE
+        	1=1 
+            <if test="project_id_search != null and project_id_search != ''">
+                AND CVPT.project_id =#{project_id_search}
+            </if>
+            <if test="task_name_search != null and task_name_search != ''">
+                AND SM.name LIKE CONCAT('%',#{task_name_search},'%')
+            </if>
+            <if test="task_id_search != null and task_id_search != ''">
+                AND CVPT.task_id =#{task_id_search}
+            </if>
+            <if test="status_search != null and status_search != ''">
+                AND SM.status =#{status_search}
+            </if>
+	</select>
+	
+	<insert id="addNewVendorProjectTask" parameterType="ProjectTaskBean" >
+		INSERT INTO C_VENDOR_PROJECT_TASK(
+			project_id,
+			task_id,
+			<if test="task_biz != null and task_biz != 2">
+			    task_type_id,
+			</if>
+		 	task_biz
+		 	
+		 )
+		VALUES 
+		(#{project_id},#{task_id}, 
+			<if test="task_biz != null and task_biz != 2">
+			     #{task_type_id},
+			</if>
+			#{task_biz} )
+    </insert>
+    
+	
+	<select id="getNewVendorProjectTaskList" parameterType="VendorProjectTaskSearch" resultType="ProjectTaskBean">
+         SELECT
+        	ss.task_id,
+        	ss.name,
+        	ss.create_time,
+        	<if test="type_search != null and type_search != 'share_wx'">
+        		ss.task_type_id,
+        	</if>
+        	(select cc.moble from c_customer cc where cc.customer_id = ss.create_user) as create_user,
+        	ss.create_type,
+        	ss.status
+        FROM 
+        	s_${type_search} ss
+        	<if test="type_search != null and type_search != 'share_wx'">
+        		LEFT JOIN s_task_type stt on ss.task_type_id = stt.task_type_id
+        	</if>
+        	LEFT JOIN C_VENDOR_PROJECT_TASK CVPT ON CVPT.task_id = ss.task_id AND CVPT.task_biz = #{task_biz_search}
+        WHERE
+        	CVPT.task_id is null 
+        	<if test="type_search != null and type_search != 'share_wx'">
+        		AND stt.father_id = #{task_biz_search}
+        	</if>
+            <if test="vendor_id_search != null and vendor_id_search != ''">
+                AND ss.vendor_id = #{vendor_id_search}
+            </if>
+            <if test="task_name_search != null and task_name_search != ''">
+                AND ss.name LIKE CONCAT('%',#{task_name_search},'%')
+            </if>
+            <if test="task_id_search != null and task_id_search != ''">
+                AND ss.task_id =#{task_id_search}
+            </if>
+            <if test="status_search != null and status_search != ''">
+                AND ss.status =#{status_search}
+            </if>
+            ORDER BY ss.create_time desc
+		    <if test="havePage == 1">
+	            limit #{start},#{rows}
+	        </if>
+	</select>
+	
+	<select id="getNewVendorProjectTaskCount" parameterType="VendorProjectTaskSearch" resultType="int">
+        SELECT
+        	count(ss.task_id)
+        FROM 
+        	s_${type_search} ss
+        	<if test="type_search != null and type_search != 'share_wx'">
+        		LEFT JOIN s_task_type stt on ss.task_type_id = stt.task_type_id
+        	</if>
+        	LEFT JOIN C_VENDOR_PROJECT_TASK CVPT ON CVPT.task_id = ss.task_id AND CVPT.task_biz = #{task_biz_search}
+        WHERE
+        	CVPT.task_id is null 
+        	<if test="type_search != null and type_search != 'share_wx'">
+        		AND stt.father_id = #{task_biz_search}
+        	</if>
+            <if test="vendor_id_search != null and vendor_id_search != ''">
+                AND ss.vendor_id = #{vendor_id_search}
+            </if>
+            <if test="task_name_search != null and task_name_search != ''">
+                AND ss.name LIKE CONCAT('%',#{task_name_search},'%')
+            </if>
+            <if test="task_id_search != null and task_id_search != ''">
+                AND ss.task_id =#{task_id_search}
+            </if>
+            <if test="status_search != null and status_search != ''">
+                AND ss.status =#{status_search}
+            </if>
+	</select>
+</mapper>

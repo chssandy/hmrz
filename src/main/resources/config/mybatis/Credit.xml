@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.credit">
+	<select id="listCategory" parameterType="String" resultType="CreditCategoryBean">
+		SELECT
+		  xcc.category_id,
+		  xcc.name,
+		  xcc.scale,
+		  xcc.value
+		FROM APP_CREDIT_CATEGORY xcc
+		WHERE xcc.task_biz = #{task_biz} AND
+		xcc.is_del = 0
+		ORDER BY xcc.category_id
+	</select>
+	
+	<update id="updateCategory" parameterType="CreditCategoryBean">
+		UPDATE APP_CREDIT_CATEGORY acc,APP_CREDIT_CALC acc1
+		SET acc.scale = #{scale}, acc.value = #{value}, acc.create_time = NOW(),acc1.value = (acc1.scale/100)*#{value} 
+		WHERE acc.category_id = acc1.credit_id AND acc.category_id = #{category_id} AND acc.is_del = 0 AND acc.task_biz = #{task_biz}
+	</update>
+	
+	<insert id="addNewCategory" parameterType="CreditCategoryBean">
+		INSERT INTO APP_CREDIT_CATEGORY(category_id, name, scale, value, create_time,task_biz)
+		SELECT #{category_id}, name, #{scale}, #{value}, NOW(),task_biz FROM APP_CREDIT_CATEGORY 
+		WHERE is_del = 0 AND category_id = #{category_id} AND task_biz = #{task_biz} LIMIT 0, 1
+	</insert>
+	
+	<select id="listCreditCalc" parameterType="String" resultType="CreditCalcBean">
+		SELECT
+		  xcc.calc_id,
+		  xcc.credit_id,
+		  xcc.start,
+		  xcc.end,
+		  xcc.scale,
+		  xcc.value,
+		  xcc.remark
+		FROM APP_CREDIT_CALC xcc
+		WHERE xcc.is_del = 0 
+			AND xcc.task_biz = #{task_biz}
+		ORDER BY xcc.credit_id, calc_id
+	</select>
+	
+	<update id="updateCreditCalc" parameterType="CreditCalcBean">
+		UPDATE APP_CREDIT_CALC xcc
+		SET xcc.scale = #{scale},
+		    xcc.value = (SELECT
+		        xcc1.value
+		      FROM APP_CREDIT_CATEGORY xcc1
+		      WHERE xcc1.category_id = xcc.credit_id AND xcc1.is_del = 0 ) * #{scale} /100
+		WHERE xcc.calc_id = #{calc_id} 
+	</update>
+	
+</mapper>

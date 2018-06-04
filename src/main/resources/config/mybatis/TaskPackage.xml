@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.taskPackage">
+	
+	<select id="countPackage" parameterType="TaskPackageSearch" resultType="int">
+	    SELECT
+		  COUNT(*)
+		FROM s_task_package stp
+		WHERE is_del = 0
+		<if test="create_btime != null and create_btime != ''">
+            AND stp.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00')
+        </if>
+        <if test="create_etime != null and create_etime != ''">
+            AND stp.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59')
+        </if>
+        <if test="media_type != null and media_type != ''">
+            AND stp.media_type = #{media_type}
+        </if>
+        <if test="name != null and name != ''">
+            AND stp.name like CONCAT('%', #{name},'%')
+        </if>
+  	</select>
+	
+	<select id="listPackage" parameterType="TaskPackageSearch" resultType="TaskPackageBean">
+	   SELECT
+          stp.id,
+		  stp.name,
+		  stp.sort,
+		  stp.media_type,
+		  stp.icon,
+		  stp.price_start,
+		  stp.price_end,
+		  stp.create_time,
+		  stp.status
+        FROM s_task_package stp
+        WHERE is_del = 0
+        <if test="create_btime != null and create_btime != ''">
+            AND stp.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00')
+        </if>
+        <if test="create_etime != null and create_etime != ''">
+            AND stp.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59')
+        </if>
+        <if test="media_type != null and media_type != ''">
+            AND stp.media_type = #{media_type}
+        </if>
+        <if test="name != null and name != ''">
+            AND stp.name like CONCAT('%', #{name},'%')
+        </if>
+        ORDER BY stp.create_time DESC
+        <if test="havePage == 1">
+            LIMIT #{start} , #{rows}
+        </if>
+	</select>
+	
+    <insert id="addPackage" parameterType="TaskPackageBean" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO s_task_package (name, media_type, icon, sort, create_time, price_start, price_end, remark)
+		  VALUES (#{name}, #{media_type}, #{icon}, #{sort}, NOW(), #{price_start}, #{price_end}, #{remark})
+    </insert>
+    
+    <update id="switchStatus" parameterType="TaskPackageBean">
+        UPDATE s_task_package SET status = #{status} WHERE id = #{id}
+    </update>
+    
+    <update id="delPackage" parameterType="TaskPackageBean">
+        UPDATE s_task_package SET is_del = 1 WHERE id = #{id}
+    </update>
+    
+    <update id="modifyPackage" parameterType="TaskPackageBean">
+        UPDATE s_task_package SET name = #{name}, sort = #{sort}, icon = #{icon}, price_start = #{price_start}, price_end = #{price_end}, remark = #{remark} WHERE id = #{id}
+    </update>
+    
+    <select id="getPackage" parameterType="TaskPackageSearch" resultType="TaskPackageBean">
+	    SELECT
+	          stp.id,
+	          stp.name,
+	          stp.sort,
+	          stp.media_type,
+	          stp.icon,
+	          stp.price_start,
+	          stp.price_end,
+	          stp.create_time,
+	          stp.status,
+	          stp.remark
+	        FROM s_task_package stp
+	        WHERE is_del = 0
+	        AND id = #{id}
+    </select>
+    
+    <select id="countPackageRelate" parameterType="PackageTaskSearch" resultType="int">
+        SELECT COUNT(*) FROM
+        (
+        <choose>
+            <when test="media_type == 1">
+                <include refid="select_monitor"/>
+            </when>
+            <when test="media_type == 2">
+                <include refid="select_inspecte"/>
+            </when>
+            <when test="media_type == 3">
+                <include refid="select_media"/>
+            </when>
+            <when test="media_type == 4">
+                <include refid="select_survey"/>
+            </when>
+        </choose>
+        ) T
+    </select>
+    
+    <select id="listPackageRelate" parameterType="PackageTaskSearch" resultType="PackageTaskBean">
+        SELECT * FROM
+        (
+        <choose>
+            <when test="media_type == 1">
+                <include refid="select_monitor"/>
+            </when>
+            <when test="media_type == 2">
+                <include refid="select_inspecte"/>
+            </when>
+            <when test="media_type == 3">
+                <include refid="select_media"/>
+            </when>
+            <when test="media_type == 4">
+                <include refid="select_survey"/>
+            </when>
+        </choose>
+        ) T
+        ORDER BY task_id
+        <if test="havePage == 1">
+            LIMIT #{start} , #{rows}
+        </if>
+    </select>
+    
+    <sql id="select_monitor">
+        SELECT
+          stpr.id,
+		  sm.task_id,
+		  sm.name AS task_name,
+		  sm.salary AS price,
+		  sm.publish_time,
+		  xm.manager_name AS publisher,
+		  sm.status
+		FROM s_task_package_relate stpr,
+		     s_monitor sm,
+		     xt_manager xm
+		WHERE stpr.package_id = #{package_id}
+		AND stpr.is_del = 0
+		AND stpr.task_id = sm.task_id
+		AND sm.publish_user = xm.manager_id
+		<if test="task_name != null and task_name != ''">
+		  AND sm.name like CONCAT('%', #{task_name},'%')
+		</if>
+		<if test="task_id != null and task_id != ''">
+          AND sm.task_id = #{task_id}
+        </if>
+    </sql>
+    
+    <sql id="select_inspecte">
+        SELECT
+          stpr.id,
+		  si.task_id,
+		  si.name AS task_name,
+		  si.salary AS price,
+		  si.publish_time,
+		  xm.manager_name AS publisher,
+		  si.status
+		FROM s_task_package_relate stpr,
+		     s_inspecte si,
+		     xt_manager xm
+		WHERE stpr.package_id = #{package_id}
+		AND stpr.is_del = 0
+		AND stpr.task_id = si.task_id
+		AND si.publish_user = xm.manager_id
+		<if test="task_name != null and task_name != ''">
+          AND si.name like CONCAT('%', #{task_name},'%')
+        </if>
+        <if test="task_id != null and task_id != ''">
+          AND si.task_id = #{task_id}
+        </if>
+    </sql>
+    
+    <sql id="select_media">
+        SELECT
+          stpr.id,
+          sm.task_id,
+          sm.name AS task_name,
+          sm.salary AS price,
+          sm.publish_time,
+          xm.manager_name AS publisher,
+          sm.status
+        FROM s_task_package_relate stpr,
+             s_media sm,
+             xt_manager xm
+        WHERE stpr.package_id = #{package_id}
+        AND stpr.is_del = 0
+        AND stpr.task_id = sm.task_id
+        AND sm.publish_user = xm.manager_id
+        <if test="task_name != null and task_name != ''">
+          AND sm.name like CONCAT('%', #{task_name},'%')
+        </if>
+        <if test="task_id != null and task_id != ''">
+          AND sm.task_id = #{task_id}
+        </if>
+    </sql>
+    
+    <sql id="select_survey">
+        SELECT
+          stpr.id,
+		  ss.task_id,
+		  ss.name AS task_name,
+		  ss.salary AS price,
+		  ss.publish_time,
+		  xm.manager_name AS publisher,
+		  ss.status
+		FROM s_task_package_relate stpr,
+		     s_survey ss,
+		     xt_manager xm
+		WHERE stpr.package_id = #{package_id} 
+		AND stpr.is_del = 0
+		AND stpr.task_id = ss.task_id
+		AND ss.publish_user = xm.manager_id
+		<if test="task_name != null and task_name != ''">
+          AND sm.name like CONCAT('%', #{task_name},'%')
+        </if>
+        <if test="task_id != null and task_id != ''">
+          AND ss.task_id = #{task_id}
+        </if>
+    </sql>
+    
+    <select id="countTaskChoose" parameterType="PackageTaskSearch"  resultType="int">
+        SELECT
+          COUNT(*)
+        FROM 
+        <choose>
+            <when test="media_type == 1">
+                s_monitor sm
+            </when>
+            <when test="media_type == 2">
+                s_inspecte sm
+            </when>
+            <when test="media_type == 3">
+                s_media sm
+            </when>
+            <when test="media_type == 4">
+                s_survey sm
+            </when>
+        </choose>
+        WHERE sm.is_del = 0
+        AND sm.is_exclusive = 0
+        <if test="task_name != null and task_name != ''">
+          AND sm.name like CONCAT('%', #{task_name},'%')
+        </if>
+        <if test="task_id != null and task_id != ''">
+          AND sm.task_id = #{task_id}
+        </if>
+        <choose>
+            <when test="media_type == 1">
+               AND (sm.status = 2 OR sm.status = 4 OR sm.status = 6)
+               AND sm.publish_user != 31
+            </when>
+            <when test="media_type == 2">
+               AND (sm.status = 2 OR sm.status = 4 OR sm.status = 6)
+            </when>
+            <when test="media_type == 3">
+               AND (sm.status = 2 OR sm.status = 4 OR sm.status = 6 OR sm.status = 5)
+            </when>
+            <when test="media_type == 4">
+               AND (sm.status = 2 OR sm.status = 4 OR sm.status = 6 OR sm.status = 5)
+            </when>
+        </choose>
+        AND NOT EXISTS (SELECT
+            *
+          FROM s_task_package_relate stpr
+          WHERE stpr.task_id = sm.task_id
+          AND stpr.package_id = #{package_id}
+          AND stpr.is_del = 0)
+    </select>
+    
+    <select id="listTaskChoose" parameterType="PackageTaskSearch"  resultType="PackageTaskBean">
+        SELECT
+		  sm.task_id,
+		  sm.name AS task_name,
+		  sm.publish_time,
+		  xm.manager_name AS publisher,
+		  sm.status
+		FROM 
+		<choose>
+		    <when test="media_type == 1">
+                s_monitor sm
+            </when>
+            <when test="media_type == 2">
+                s_inspecte sm
+            </when>
+            <when test="media_type == 3">
+                s_media sm
+            </when>
+            <when test="media_type == 4">
+                s_survey sm
+            </when>
+		</choose>
+		, xt_manager xm
+		WHERE sm.is_del = 0
+		AND sm.is_exclusive = 0
+		AND sm.publish_user = xm.manager_id
+		<if test="task_name != null and task_name != ''">
+          AND sm.name like CONCAT('%', #{task_name},'%')
+        </if>
+        <if test="task_id != null and task_id != ''">
+          AND sm.task_id = #{task_id}
+        </if>
+        <choose>
+            <when test="media_type == 1">
+               AND (sm.status = 2 OR sm.status = 4 OR sm.status = 6)
+               AND sm.publish_user != 31
+            </when>
+            <when test="media_type == 2">
+               AND (sm.status = 2 OR sm.status = 4 OR sm.status = 6)
+            </when>
+            <when test="media_type == 3">
+               AND (sm.status = 2 OR sm.status = 4 OR sm.status = 6 OR sm.status = 5)
+            </when>
+            <when test="media_type == 4">
+               AND (sm.status = 2 OR sm.status = 4 OR sm.status = 6 OR sm.status = 5)
+            </when>
+        </choose>
+        AND NOT EXISTS (SELECT
+		    *
+		  FROM s_task_package_relate stpr
+		  WHERE stpr.task_id = sm.task_id
+		  AND stpr.package_id = #{package_id}
+		  AND stpr.is_del = 0)
+		ORDER BY sm.task_id DESC
+        <if test="havePage == 1">
+            LIMIT #{start} , #{rows}
+        </if>
+    </select>
+    
+    <insert id="taskAdd" parameterType="HashMap">
+        INSERT INTO s_task_package_relate(task_id, package_id, create_time, operator)
+        VALUES (#{task_id}, #{package_id}, NOW(), #{operator})
+    </insert>
+    
+    <update id="taskDel" parameterType="String">
+        UPDATE s_task_package_relate SET is_del = 1 WHERE id = #{id}
+    </update>
+    
+    <select id="countBySort" parameterType="int" resultType="int">
+        SELECT COUNT(*) FROM s_task_package stp WHERE stp.sort = #{sort} AND stp.is_del = 0
+    </select>
+    
+</mapper>

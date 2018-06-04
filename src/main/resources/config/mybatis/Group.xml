@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.group">
+	
+	<select id="getAllGroupList" parameterType="String" resultType="GroupBean">
+		select group_id,name from c_group where vendor_id = #{vendor_id} 
+	</select>
+	
+	
+	<select id="getOfficeList" parameterType="OfficeSearch" resultType="OfficeBean">
+	    select office_id,name,moble,department,remark,create_time from c_office 
+	    where vendor_id = #{vendor_id} and is_del = 0
+    	<if test="name != null and name != ''">
+			AND name LIKE CONCAT('%',#{name},'%')
+		</if>
+		<if test="moble !=null and moble !=''">
+			AND moble = #{moble}
+		</if>
+		<if test="create_btime !=null and create_btime !=''">
+			AND create_time &gt;= concat(#{create_btime},' 00:00:00')
+		</if>
+		<if test="create_etime !=null and create_etime !=''">
+			AND create_time &lt;= concat(#{create_etime},' 23:59:59')
+		</if>
+		<if test="department != null and department != ''">
+			AND department LIKE CONCAT('%',#{department},'%')
+		</if>
+	    ORDER BY create_time DESC
+	    <if test="havePage == 1">
+            LIMIT #{start},#{rows}
+        </if>
+	</select>
+	
+	<select id="getOfficeCount" parameterType="OfficeSearch" resultType="int">
+	    select count(1) from c_office where vendor_id = #{vendor_id} and is_del = 0
+	</select>
+	
+	<select id="getGroupList" parameterType="GroupSearch" resultType="GroupBean">
+	    select group_id,name,remark,create_time 
+	    from c_group
+	    where vendor_id = #{vendor_id}
+    	<if test="name != null and name != ''">
+			AND name LIKE CONCAT('%',#{name},'%')
+		</if>
+		<if test="create_btime !=null and create_btime !=''">
+			AND create_time &gt;= concat(#{create_btime},' 00:00:00')
+		</if>
+		<if test="create_etime !=null and create_etime !=''">
+			AND create_time &lt;= concat(#{create_etime},' 23:59:59')
+		</if>
+	    ORDER BY create_time DESC
+	    <if test="havePage == 1">
+            LIMIT #{start},#{rows}
+        </if>
+	</select>
+	
+	<select id="getGroupCount" parameterType="GroupSearch" resultType="int">
+	    select count(1) from c_group where vendor_id = #{vendor_id}
+	</select>
+</mapper>

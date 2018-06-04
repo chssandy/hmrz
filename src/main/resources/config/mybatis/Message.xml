@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.message">
+	<insert id="addMessage" parameterType="MessageBean" useGeneratedKeys="true" keyProperty="message_id">
+        INSERT INTO S_MESSAGE (
+			accepter,
+			content,
+			params,
+			push_time,
+			type,
+			biz_type,
+			remark,
+			push_id
+        )
+        VALUES 
+        (#{accepter,jdbcType=VARCHAR},
+         #{content,jdbcType=VARCHAR},
+         #{params,jdbcType=VARCHAR},
+         #{push_time,jdbcType=VARCHAR},
+         #{type,jdbcType=VARCHAR},
+         #{biz_type,jdbcType=VARCHAR},
+         #{remark,jdbcType=VARCHAR},
+         #{push_id,jdbcType=VARCHAR}
+         )
+    </insert>
+    
+	<insert id="addMessagePush" parameterType="MessagePushBean" useGeneratedKeys="true" keyProperty="push_id">
+        INSERT INTO S_MESSAGE_PUSH (
+			type,
+			plat_form,
+			extras,
+			content,
+			is_real_time,
+			push_time,
+			aims,
+			create_user
+        )
+        VALUES 
+        (#{type,jdbcType=VARCHAR},
+         #{plat_form,jdbcType=VARCHAR},
+         #{extras,jdbcType=VARCHAR},
+         #{content,jdbcType=VARCHAR},
+         #{is_real_time,jdbcType=VARCHAR},
+         <if test="push_time != null and push_time != ''">
+         #{push_time,jdbcType=VARCHAR},
+         </if>
+          <if test="push_time == null or push_time == ''">
+         NOW(),
+         </if>
+         #{aims,jdbcType=VARCHAR},
+         #{create_user,jdbcType=VARCHAR}
+         )
+    </insert>
+    
+	
+	<select id="getPushList"  parameterType="MessagePushSearch" resultType="MessagePushBean">
+		select 	
+			smp.push_id,
+			smp.type,
+			smp.content,
+			smp.plat_form,
+			xm.manager_name as create_user,
+			smp.push_time,
+			smp.create_time
+		from s_message_push smp,xt_manager xm
+		where smp.create_user = xm.manager_id
+	    	<if test="manager_name != null and manager_name != ''">
+				 AND xm.manager_name LIKE CONCAT('%',#{manager_name},'%')
+			</if>
+			<if test="type!=null and type !='' and type != '-1' ">
+				 AND smp.type = #{type}
+			</if>
+			<if test="plat_form !=null and plat_form !='' and plat_form != '-1' ">
+				 AND smp.plat_form = #{plat_form}
+			</if>
+			<if test="create_btime != null and create_btime != ''">
+                AND smp.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00') 
+            </if>
+            <if test="create_etime != null and create_etime != ''">
+                AND smp.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59') 
+            </if>
+	    ORDER BY smp.create_time DESC
+	    <if test="havePage == 1">
+            LIMIT #{start},#{rows}
+        </if>
+	</select>
+	
+	
+	<select id="getPushCount" parameterType="MessagePushSearch" resultType="int" >
+		select 	count(1) from s_message_push smp,xt_manager xm
+		where smp.create_user = xm.manager_id
+	    	<if test="manager_name != null and manager_name != ''">
+				 AND xm.manager_name LIKE CONCAT('%',#{manager_name},'%')
+			</if>
+			<if test="type!=null and type !='' and type != '-1' ">
+				 AND smp.type = #{type}
+			</if>
+			<if test="plat_form !=null and plat_form !='' and plat_form != '-1' ">
+				 AND smp.plat_form = #{plat_form}
+			</if>
+			<if test="create_btime != null and create_btime != ''">
+                AND smp.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00') 
+            </if>
+            <if test="create_etime != null and create_etime != ''">
+                AND smp.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59') 
+            </if>
+	</select>
+	
+	
+	<select id="getPush"  parameterType="String" resultType="MessagePushBean">
+		select 	
+			smp.push_id,
+			smp.type,
+			smp.content,
+			smp.extras,
+			smp.plat_form,
+			smp.push_time,
+			smp.create_time,
+			smp.is_real_time,
+			smp.aims
+		from s_message_push smp
+		where smp.push_id = #{push_id}
+	</select>
+	
+	<select id="getRespetorRuleList" parameterType="Object" resultType="UserBean" >
+		select 	
+			au.user_id,
+			au.moble,
+			au.registration_id,
+			au.platform
+		from app_user au left join xt_city xc on au.city = xc.district_code and xc.city_level = 5
+		where au.is_del = 0 
+		AND au.registration_id IS NOT NULL
+		AND au.registration_id &lt;&gt; ''
+			<if test='platform != null and platform != ""'>
+                AND au.platform = #{platform}
+            </if>
+            <if test='brand != null and brand != ""'>
+                AND au.brand = #{brand}
+            </if>
+			<if test="sex != null and sex != ''">
+                AND au.sex = #{sex}
+            </if>
+            <if test="registered_days_start != null and registered_days_start != ''">
+            	AND (TO_DAYS(NOW()) - TO_DAYS(au.create_time) &gt;= #{registered_days_start})
+            </if>
+            <if test="registered_days_end != null and registered_days_end != ''">
+                AND (TO_DAYS(NOW()) - TO_DAYS(au.create_time) &lt;= #{registered_days_end})
+            </if>
+            <if test="offline_days_start != null and offline_days_start != ''">
+            	AND (TO_DAYS(NOW()) - TO_DAYS(au.last_use_time) &gt;= #{offline_days_start})
+            </if>
+            <if test="offline_days_end != null and offline_days_end != ''">
+                AND (TO_DAYS(NOW()) - TO_DAYS(au.last_use_time) &lt;= #{offline_days_end})
+            </if>
+            <if test="occupation != null and occupation != ''">
+                AND au.occupation in 
+                <foreach collection="occupation" item="item"  separator="," open="(" close=")">
+					#{item,jdbcType=VARCHAR}
+		        </foreach>
+            </if>
+       		<if test="sideline != null and sideline != ''">
+       		    AND
+	            <foreach collection="sideline" item="item"  separator="OR" open="(" close=")">
+					 find_in_set(#{item,jdbcType=VARCHAR},au.sideline)
+		        </foreach>
+            </if>
+            <if test="city != null and city != ''">
+       		    AND 
+	            <foreach collection="city" item="item"  separator="OR" open="(" close=")">
+	                <if test='item.city_level != null and item.city_level == "2"'>
+	                 	1 = 1
+                 	</if>
+                 	<if test='item.city_level != null and item.city_level == "3"'>
+	                 	(xc.province_code = #{item.city_code,jdbcType=VARCHAR})
+                 	</if>
+                 	<if test='item.city_level != null and item.city_level == "4"'>
+                 		(xc.city_code = #{item.city_code,jdbcType=VARCHAR})
+                	</if>
+		        </foreach>
+            </if>
+            ORDER BY au.user_id 
+            <if test="havePage == 1">
+	            LIMIT #{start},#{rows}
+	        </if>
+	</select>
+	
+	<select id="getRespetorRuleCount" parameterType="Object" resultType="int" >
+		select 	count(1) 
+		from app_user au left join xt_city xc on au.city = xc.district_code and xc.city_level = 5
+		where au.is_del = 0 
+			<if test='platform != null and platform != ""'>
+                AND au.platform = #{platform}
+            </if>
+            <if test='brand != null and brand != ""'>
+                AND au.brand = #{brand}
+            </if>
+			<if test="sex != null and sex != ''">
+                AND au.sex = #{sex}
+            </if>
+            <if test="registered_days_start != null and registered_days_start != ''">
+            	AND (TO_DAYS(NOW()) - TO_DAYS(au.create_time) &gt;= #{registered_days_start})
+            </if>
+            <if test="registered_days_end != null and registered_days_end != ''">
+                AND (TO_DAYS(NOW()) - TO_DAYS(au.create_time) &lt;= #{registered_days_end})
+            </if>
+            <if test="offline_days_start != null and offline_days_start != ''">
+            	AND (TO_DAYS(NOW()) - TO_DAYS(au.last_use_time) &gt;= #{offline_days_start})
+            </if>
+            <if test="offline_days_end != null and offline_days_end != ''">
+                AND (TO_DAYS(NOW()) - TO_DAYS(au.last_use_time) &lt;= #{offline_days_end})
+            </if>
+            <if test="occupation != null and occupation != ''">
+                AND au.occupation in 
+                <foreach collection="occupation" item="item"  separator="," open="(" close=")">
+					#{item,jdbcType=VARCHAR}
+		        </foreach>
+            </if>
+       		<if test="sideline != null and sideline != ''">
+       		    AND
+	            <foreach collection="sideline" item="item"  separator="OR" open="(" close=")">
+					 find_in_set(#{item,jdbcType=VARCHAR},au.sideline)
+		        </foreach>
+            </if>
+            <if test="city != null and city != ''">
+       		    AND 
+	            <foreach collection="city" item="item"  separator="OR" open="(" close=")">
+	                <if test='item.city_level != null and item.city_level == "2"'>
+	                 	1 = 1
+                 	</if>
+                 	<if test='item.city_level != null and item.city_level == "3"'>
+	                 	(xc.province_code = #{item.city_code,jdbcType=VARCHAR})
+                 	</if>
+                 	<if test='item.city_level != null and item.city_level == "4"'>
+                 		(xc.city_code = #{item.city_code,jdbcType=VARCHAR})
+                	</if>
+		        </foreach>
+            </if>
+	</select>
+	
+	<select id="validTaskId" parameterType="java.util.Map" resultType="int" >
+	    SELECT 
+	    	count(s.task_id)
+		FROM
+			s_${type} s
+		WHERE s.is_del = 0 
+			and s.status = 2
+			and s.task_id = #{task_id}
+	</select>
+	
+	<select id="validPackgeId" parameterType="String" resultType="int" >
+	    SELECT 
+	    	count(s.id)
+		FROM
+			s_task_package s
+		WHERE s.is_del = 0 and s.status = 2 and s.id = #{id}
+	</select>
+	
+</mapper>

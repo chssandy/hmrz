@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.sharewx">
+
+	<select id="getSharewxList"  parameterType="SharewxSearch" resultType="SharewxListBean">
+		SELECT
+		  ssw.task_id,
+		  ssw.name,
+		  cv.vendor_name,
+		  cc.moble as create_user,
+		  xm.manager_name as agent,
+		  ssw.salary,
+		  ssw.execute_times,
+		  ssw.plat_fee,
+		  ssw.do_btime,
+		  ssw.do_etime,
+		  ssw.status,
+		  ssw.remark,
+		  ssw.reject_reason,
+		  ssw.vendor_id
+		FROM s_share_wx ssw
+		LEFT JOIN c_vendor cv on ssw.vendor_id = cv.vendor_id
+		LEFT JOIN c_customer cc on ssw.create_user = cc.customer_id
+		LEFT JOIN xt_manager xm on ssw.agent = xm.manager_id
+	    <where>
+	   		<if test="task_id != null and task_id != ''">
+				ssw.task_id = #{task_id} AND
+			</if>
+	    	<if test="name != null and name != ''">
+				ssw.name LIKE CONCAT('%',#{name},'%') AND
+			</if>
+			<if test="status !=null and status !='' and status != '-1' ">
+				ssw.status = #{status} AND
+			</if>
+			<if test="vendor_name != null and vendor_name != ''">
+				cv.vendor_name like concat('%',#{vendor_name},'%') AND
+			</if>
+			<if test="create_btime != null and create_btime != ''">
+                ssw.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00') AND
+            </if>
+            <if test="create_etime != null and create_etime != ''">
+                ssw.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59') AND
+            </if>
+			 	ssw.is_del = 0 AND (ssw.create_type &lt;&gt; 1 OR (ssw.create_type = 1 AND ssw.status &lt;&gt; 0 ))
+			<!-- 需要上线审核的任务is_desc 为升序  -->
+			<if test='is_desc == "1"'>
+		    	AND ssw.status = 1
+		    </if>
+		</where>
+	    ORDER BY ssw.create_time
+	    <if test='is_desc == "0"'>
+	    	DESC
+	    </if>
+	    <if test="havePage == 1">
+            LIMIT #{start},#{rows}
+        </if>
+	</select>
+	
+	
+	<select id="getSharewxCount" parameterType="SharewxSearch" resultType="int" >
+		select 	count(1) from s_share_wx ssw
+		LEFT JOIN c_vendor cv on ssw.vendor_id = cv.vendor_id
+	    <where>
+	   		<if test="task_id != null and task_id != ''">
+				ssw.task_id = #{task_id} and
+			</if>
+	    	<if test="name != null and name != ''">
+				ssw.name LIKE CONCAT('%',#{name},'%') and
+			</if>
+			<if test="status !=null and status !='' and status != '-1' ">
+				ssw.status = #{status} and
+			</if>
+			<if test="vendor_name != null and vendor_name != ''">
+				cv.vendor_name like concat('%',#{vendor_name},'%') AND
+			</if>
+			<if test="create_btime != null and create_btime != ''">
+                ssw.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00') AND
+            </if>
+            <if test="create_etime != null and create_etime != ''">
+                ssw.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59') AND
+            </if>
+			ssw.is_del = 0 AND (ssw.create_type &lt;&gt; 1 OR (ssw.create_type = 1 AND ssw.status &lt;&gt; 0 ))
+			<!-- 需要上线审核的任务is_desc 为升序  -->
+			<if test='is_desc == "1"'>
+		    	AND ssw.status = 1
+		    </if>
+		</where>
+	</select>
+	
+	<insert id="addSharewx" parameterType="SharewxBean" useGeneratedKeys="true" keyProperty="task_id"> 
+		insert into s_share_wx
+		(name,descript,do_btime,do_etime,status,vendor_id,icon,url,
+			salary,plat_fee,execute_times,agent,create_user,create_type,is_exclusive) values
+		(#{name},#{descript},#{do_btime},#{do_etime},#{status},#{vendor_id},#{icon},#{url},
+			#{salary},#{plat_fee},#{execute_times},#{agent},#{create_user},#{create_type},#{is_exclusive})
+	</insert>
+	
+	<insert id="addSharewxRestrain" parameterType="TaskRestrainBean">
+		insert into s_survey_restrain(task_id,group_id,sex )
+		values (#{task_id},#{group_id},#{sex} )
+	</insert>
+	
+	<insert id="addSharewxCity" parameterType="HashMap">
+		insert into s_share_wx_city (task_id,city_code,city_level) values
+		<foreach collection="cities" item="item" separator=","  index="index">
+		 (#{task_id},#{item.city_code},#{item.city_level})
+		</foreach>
+	</insert>
+	
+	<delete id="deleteSharewxExt" parameterType="string">
+		delete from s_share_wx_city where task_id = #{task_id} 
+	</delete>
+	
+	<delete id="deleteSharewx" parameterType="String">
+		delete ssw,sswr,sswc from s_share_wx ssw
+	    left join s_share_wx_restrain sswr on ssw.task_id = sswr.task_id
+	    left join s_share_wx_city sswc on ssw.task_id = sswc.task_id
+		where 
+		ssw.task_id = #{task_id} and ssw.status = 0 
+	</delete>
+	
+	<update id="publishShareWX" parameterType="ShareWXBean">
+		update s_share_wx set status = #{status},publish_user = #{publish_user},publish_time = now() 
+		where task_id = #{task_id} 
+	</update>
+	
+	<update id="updateSharewx" parameterType="SharewxBean">
+		update s_share_wx ssw left join s_share_wx_restrain sswr on ssw.task_id = sswr.task_id
+		<set>
+			ssw.name = #{name},
+			ssw.descript = #{descript},
+			ssw.salary = #{salary},
+			ssw.plat_fee = #{plat_fee},
+			ssw.execute_times = #{execute_times},
+			ssw.do_btime = #{do_btime},
+			ssw.do_etime = #{do_etime},
+			ssw.icon = #{icon},
+			ssw.url = #{url},
+			ssw.is_exclusive = #{is_exclusive},
+			sswr.group_id = #{trb.group_id},
+			sswr.sex = #{trb.sex}
+		</set>	
+		where ssw.task_id = #{task_id} and ssw.vendor_id = #{vendor_id}
+	</update>
+	
+	<update id="updateTaskRemark" parameterType="SharewxBean" >
+		update s_share_wx set remark = #{remark} where task_id = #{task_id}
+	</update>
+	
+	<select id="getSharewxById" parameterType="String" resultMap="sharewxInfo">
+		select ssw.task_id,ssw.name,ssw.descript,ssw.vendor_id,ssw.create_user,
+			DATE_FORMAT(ssw.do_btime,'%Y-%m-%d %H:%i') do_btime,
+			DATE_FORMAT(ssw.do_etime,'%Y-%m-%d %H:%i') do_etime,
+			ssw.icon,ssw.url,ssw.salary,ssw.execute_times,
+		sswc.city_code,sswc.city_level,
+		sswr.group_id,sswr.sex
+		from s_share_wx ssw
+		left join s_share_wx_city sswc on ssw.task_id = sswc.task_id
+		left join s_share_wx_restrain sswr on ssw.task_id = sswr.task_id
+		where ssw.task_id = #{task_id} 
+	</select>
+	
+	
+	<resultMap type="SharewxBean" id="sharewxInfo">
+		<id column="task_id" property="task_id"></id>
+		<result column="name" property="name" />
+		<result column="descript" property="descript" />
+		<result column="salary" property="salary" />
+		<result column="execute_times" property="execute_times" />
+		<result column="do_btime" property="do_btime" />
+		<result column="do_etime" property="do_etime" />
+		<result column="vendor_id" property="vendor_id" />
+		<result column="create_user" property="create_user" />
+		<result column="icon" property="icon" />
+		<result column="url" property="url" />
+		<association property="trb" javaType="TaskRestrainBean" >
+			<result column="group_id" property="group_id"/>
+			<result column="sex" property="sex"/>
+		</association>
+		<collection property="cityList" ofType="CityBean" >
+			<result property="city_code" column="city_code" />
+			<result property="city_level"  column="city_level" />
+		</collection>
+	</resultMap>
+	
+	<select id="getTaskMainInfo" parameterType="String" resultType="SharewxBean">
+		select task_id,name,vendor_id,create_user,agent
+		from s_share_wx
+		where task_id = #{task_id}
+	</select>
+	
+</mapper>

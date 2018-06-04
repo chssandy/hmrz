@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.module">
+
+	<select id="selectAll" parameterType="ModuleSearch" resultType="ModuleBean" >
+		SELECT
+		  m.module_id,
+		  m.module_name,
+		  m.module_url,
+		  m.namespace,
+		  xm.module_name AS fatherName,
+		  m.create_time AS create_time,
+		  xmr.manager_name AS create_userName,
+		  m.remark AS remark,
+		  m.father_id
+		FROM XT_MODULE m
+		  LEFT JOIN XT_MODULE xm
+		    ON m.father_id = xm.module_id
+		  LEFT JOIN XT_MANAGER xmr
+		    ON m.create_user = xmr.manager_id
+		WHERE m.is_del = 0
+		<if test="pattern != null and pattern != ''">
+			and  m.module_name like  CONCAT('%',#{pattern},'%')
+		</if>
+		<if test="!IsIncludeRoot">
+			AND m.father_id != 0
+		</if>
+		<if test="onlyRoot">
+			AND m.father_id = 0
+		</if>
+		ORDER BY - m.sort_level DESC, m.create_time
+		<if test="havePage == 1">
+            limit #{start},#{rows}
+        </if>
+	</select>
+	
+	<select id="getAllModule" resultType="ModuleBean">
+		SELECT 
+		  xm.module_id, 
+		  xm.module_url,
+		  xm.namespace,
+		  (SELECT
+		      GROUP_CONCAT(xrm.role_id)
+		    FROM XT_ROLE_MODULE xrm
+		    WHERE xrm.module_id = xm.module_id AND xrm.is_del = 0) AS roles
+		FROM XT_MODULE xm WHERE xm.is_del = 0
+		AND NOT EXISTS (SELECT
+		    *
+		  FROM XT_MODULE xm1
+		  WHERE xm.module_id = xm1.father_id)
+	</select>
+	
+	<select id="selectAllCount" parameterType="ModuleSearch" resultType="int">
+		select count(1) from XT_MODULE m where m.is_del=0
+		<if test="pattern != null and pattern != ''">
+			and  m.module_name like  CONCAT('%',#{pattern},'%')
+		</if>
+		<if test="!IsIncludeRoot">
+			AND m.father_id != 0
+		</if>
+		<if test="onlyRoot">
+			AND m.father_id = 0
+		</if>
+	</select>
+	
+	<select id="selectByPID" parameterType="int" resultType="ModuleBean">
+		SELECT
+		  m.module_id,
+		  m.module_name
+		FROM XT_MODULE m
+		WHERE m.father_id = #{pid} and
+		m.is_del = 0
+	</select>
+	
+	<select id="selectByID" parameterType="int" resultType="ModuleBean">
+		SELECT
+		  xm.module_id,
+		  xm.module_name,
+		  xm.module_url,
+		  xm.namespace,
+		  xm.remark,
+		  xm.father_id
+		FROM  XT_MODULE xm
+		WHERE xm.is_del = 0
+		  AND xm.module_id = #{moduleID}
+	</select>
+	
+	<insert id="add" parameterType="ModuleBean">
+		INSERT INTO XT_MODULE (module_name, father_id, module_url,namespace, create_user, remark)
+  		VALUES (#{module_name},#{father_id},#{module_url},#{namespace},#{create_user},#{remark})
+	</insert>
+
+	<update id="update" parameterType="ModuleBean">
+		UPDATE XT_MODULE m
+		SET m.module_name = #{module_name},
+		    m.module_url = #{module_url},
+		    m.namespace = #{namespace},
+		    m.father_id = #{father_id},
+		    m.remark = #{remark}
+		WHERE module_id = #{module_id}
+	</update>
+
+	<!-- 此处的参数不能使用${ids} 原因见http://woshixy.blog.51cto.com/5637578/1180914，不懂为什么 -->
+	<update id="del" parameterType="String">
+		UPDATE XT_MODULE m SET m.is_del = 1 WHERE module_id IN (${_parameter})
+	</update>
+	
+	<update id="setModuleIndex" parameterType="ModuleBean">
+		UPDATE XT_MODULE m
+		SET m.sort_level = #{sort_level}
+		WHERE module_id = #{module_id}
+	</update>
+
+</mapper>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.supervise.vendorConsume">
+
+	<insert id="addVendorConsume" parameterType="SuperviseVendorConsumeBean" useGeneratedKeys="true" keyProperty="consume_id">
+		insert into J_ACCOUNT_CONSUME(
+			vendor_id,
+			amount,
+			type,
+			create_user,
+			remark) 
+		values(#{vendor_id},#{amount},#{type},(select user_id from j_user where vendor_id = #{vendor_id} limit 0,1),#{remark})
+	</insert>
+	
+	<!-- 插入监播客户充值信息     ============================================================= -->
+	<insert id="addCharge" parameterType="SuperviseVendorChargeBean">
+		insert into j_account_charge (
+			vendor_id,
+			amount,
+			remark,
+			status,   <!-- 直接插入1：成功 -->
+			create_user,
+			update_user,
+			update_time,
+			source
+			) 
+		values (#{vendor_id},#{amount},#{remark},1,
+			
+			,#{update_user},NOW(),#{source})
+	</insert>
+	
+
+	<select id="getConsumeCount" parameterType="SuperviseVendorSearch" resultType="int">
+		 SELECT COUNT(1) 
+		 FROM  j_account_consume jac
+		 WHERE jac.vendor_id = #{vendor_id}  
+	</select>
+	
+	<select id="getConsumeList" parameterType="SuperviseVendorSearch" resultType="SuperviseVendorConsumeBean">
+		 SELECT 	
+		 	consume_id,
+			vendor_id,
+			amount,
+			type,
+			create_time,
+			remark
+		 FROM 
+			j_account_consume jac
+		 WHERE jac.vendor_id = #{vendor_id} 
+	     ORDER BY jac.create_time DESC
+		<if test="havePage == 1">
+     		LIMIT #{start} , #{rows}
+       	</if>
+	</select>
+	
+	
+</mapper>

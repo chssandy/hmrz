@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.monitor">
+	<select id="getMonitorList"  parameterType="MonitorSearch" resultType="MonitorListBean">
+		SELECT
+		  sm.task_id,
+		  sm.name,
+		  sm.salary,
+		  sm.create_type,
+		  sm.task_type_id,
+		  sm.do_btime,
+		  sm.do_etime,
+		  sm.plat_fee,
+		  sm.show_btime,
+		  sm.show_etime,
+		  sm.status,
+		  sm.reject_reason,
+		  sm.remark,
+	      cc.moble as create_user,
+	      xm.manager_name as agent,
+		  sb.brand_name,
+		  cv.vendor_name,
+		  stt.name AS task_type_name,
+		  xc.city_name,
+		  sm.audit_times,
+		  sm.vendor_id
+		FROM s_monitor sm
+		LEFT JOIN c_vendor cv ON sm.vendor_id = cv.vendor_id
+		LEFT JOIN s_monitor_city smc ON sm.task_id = smc.task_id
+		LEFT JOIN s_brand sb ON sm.brand_id = sb.brand_id
+		LEFT JOIN xt_city xc ON smc.city_code = xc.city_code and xc.city_level = 4
+		LEFT JOIN s_task_type stt ON sm.task_type_id = stt.task_type_id
+		LEFT JOIN c_customer cc on sm.create_user = cc.customer_id
+		LEFT JOIN xt_manager xm on sm.agent = xm.manager_id
+	    <where>
+	   		<if test="task_id != null and task_id != ''">
+				 sm.task_id = #{task_id} AND
+			</if>
+	    	<if test="name != null and name != ''">
+				 sm.name LIKE CONCAT('%',#{name},'%') AND
+			</if>
+			<if test="task_type_id !=null and task_type_id !='' and task_type_id != '-1' ">
+				 sm.task_type_id = #{task_type_id} AND
+			</if>
+			<if test="status !=null and status !='' and status != '-1' ">
+				 sm.status = #{status} AND
+			</if>
+			<if test="vendor_name != null and vendor_name != ''">
+				 cv.vendor_name LIKE CONCAT('%', #{vendor_name} ,'%') AND
+			</if>
+			<if test="city != null and city != ''">
+				 xc.city_name LIKE CONCAT('%',#{city},'%')  AND
+			</if>
+			<if test="create_btime != null and create_btime != ''">
+                 sm.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00') AND
+            </if>
+            <if test="create_etime != null and create_etime != ''">
+                 sm.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59') AND
+            </if>
+			 	sm.is_del = 0 AND (sm.create_type &lt;&gt; 1 OR (sm.create_type = 1 AND sm.status &lt;&gt; 0 ))
+			<!-- 需要上线审核的任务is_desc 为升序  -->
+			<if test='is_desc == "1"'>
+		    	AND sm.status = 1
+		    </if>
+		</where>
+	    ORDER BY sm.create_time 
+	    <if test='is_desc == "0"'>
+	    	DESC
+	    </if>
+	    <if test="havePage == 1">
+            LIMIT #{start},#{rows}
+        </if>
+	</select>
+	
+	
+	<select id="getMonitorCount" parameterType="MonitorSearch" resultType="int" >
+		select 	count(1) from s_monitor sm
+		LEFT JOIN c_vendor cv ON sm.vendor_id = cv.vendor_id
+		LEFT JOIN s_monitor_city smc ON sm.task_id = smc.task_id
+		LEFT JOIN xt_city xc ON smc.city_code = xc.city_code and xc.city_level = 4
+	    <where>
+	   		<if test="task_id != null and task_id != ''">
+				 sm.task_id = #{task_id} and
+			</if>
+	    	<if test="name != null and name != ''">
+				 sm.name LIKE CONCAT('%',#{name},'%') and
+			</if>
+			<if test="task_type_id !=null and task_type_id !='' and task_type_id != '-1' ">
+				 sm.task_type_id = #{task_type_id} and
+			</if>
+			<if test="status !=null and status !='' and status != '-1' ">
+				 sm.status = #{status} and
+			</if>
+			<if test="vendor_name != null and vendor_name != ''">
+				 cv.vendor_name LIKE CONCAT('%', #{vendor_name} ,'%') AND
+			</if>
+			<if test="city != null and city != ''">
+				 xc.city_name LIKE CONCAT('%',#{city},'%') and
+			</if>
+			<if test="create_btime != null and create_btime != ''">
+                sm.create_time &gt;= CONCAT(#{create_btime}, ' 00:00:00') AND
+            </if>
+            <if test="create_etime != null and create_etime != ''">
+                sm.create_time &lt;= CONCAT(#{create_etime}, ' 23:59:59') AND
+            </if>
+			 	sm.is_del = 0  AND (sm.create_type &lt;&gt; 1 OR (sm.create_type = 1 AND sm.status &lt;&gt; 0 ))
+			<!-- 需要上线审核的任务is_desc 为升序  -->
+			<if test='is_desc == "1"'>
+		    	AND sm.status = 1
+		    </if>
+		</where>
+	</select>
+	
+	<insert id="addMonitor" parameterType="MonitorBean"  useGeneratedKeys="true" keyProperty="task_id" >
+		insert into s_monitor(name,descript,task_type_id,salary,show_btime,show_etime,do_btime,do_etime,audit_times,
+					publish_user,publish_time,plat_fee,status,vendor_id,brand_id,a_exe_time,b_exe_time,c_exe_time,
+					remark,agent,create_user,create_type,is_exclusive)
+			values(#{name},#{descript},#{task_type_id},#{salary},#{show_btime},#{show_etime},#{do_btime},#{do_etime},#{audit_times},
+					#{publish_user},#{publish_time},#{plat_fee},#{status},#{vendor_id},#{brand_id},#{a_exe_time},#{b_exe_time},#{c_exe_time},
+					#{remark},#{agent},#{create_user},#{create_type},#{is_exclusive} )				
+	</insert>
+	
+	<update id="updateMonitor" parameterType="MonitorBean">
+		update s_monitor sm left join s_monitor_restrain smr on sm.task_id = smr.task_id
+		<set>
+			sm.name = #{name},
+			sm.descript = #{descript},
+			sm.salary = #{salary},
+			sm.do_btime = #{do_btime},
+			sm.do_etime = #{do_etime},
+			sm.show_btime = #{show_btime},
+			sm.show_etime = #{show_etime},
+			sm.plat_fee = #{plat_fee},
+			sm.brand_id = #{brand_id},
+			sm.a_exe_time = #{a_exe_time},
+			sm.b_exe_time = #{b_exe_time},
+			sm.c_exe_time = #{c_exe_time},
+			sm.is_exclusive = #{is_exclusive},
+			sm.audit_times = #{audit_times},
+			smr.water_marker = #{trb.water_marker},
+			smr.execute_address = #{trb.execute_address},
+			smr.execute_lat_lng = #{trb.execute_lat_lng},
+			smr.execute_range = #{trb.execute_range},
+			smr.be_located = #{trb.be_located},
+			smr.group_id = #{trb.group_id},
+			smr.sex = #{trb.sex}
+		</set>	
+		where sm.task_id = #{task_id} and sm.vendor_id = #{vendor_id}
+	</update>
+	
+	<update id="updateTaskRemark" parameterType="MonitorBean" >
+		update s_monitor set remark = #{remark} where task_id = #{task_id}
+	</update>
+	
+	<delete id="deleteMonitorExt" parameterType="string">
+		delete smt,smo,smc,sma
+		from s_monitor sm
+	    left join s_monitor_topic smt on sm.task_id = smt.task_id
+	    left join s_monitor_option smo on sm.task_id = smo.task_id
+	    left join s_monitor_city smc on sm.task_id = smc.task_id
+	    left join s_monitor_aim sma on sm.task_id = sma.task_id
+		where sm.task_id = #{task_id} 
+	</delete>
+	
+	<delete id="deleteMonitor" parameterType="String">
+		delete sm,smr,smt,smo,smc,sma from s_monitor sm
+	    left join s_monitor_restrain smr on sm.task_id = smr.task_id
+	    left join s_monitor_topic smt on sm.task_id = smt.task_id
+	    left join s_monitor_option smo on sm.task_id = smo.task_id
+	    left join s_monitor_city smc on sm.task_id = smc.task_id
+	    left join s_monitor_aim sma on sm.task_id = sma.task_id
+		where 
+		sm.task_id = #{task_id} and sm.status = 0 
+	</delete>
+	
+	<update id="publishMonitor" parameterType="MonitorBean">
+		update s_monitor set status = #{status},publish_user = #{publish_user},publish_time = now()
+		where task_id = #{task_id}
+	</update>
+	
+	<insert id="addMonitorTopics" parameterType="HashMap">
+		insert into s_monitor_topic(task_id,cid,sort,field_type,label,descript,required,img_url,skipto,answer_rules,execute_rule,execute_img) values
+		<foreach collection="topicList" item="item" separator=","  index="index">
+		 (#{task_id},#{item.cid},#{item.sort},#{item.field_type},#{item.label},#{item.descript},#{item.required},
+		 	#{item.img_url},#{item.skipto},#{item.answer_rules},#{item.execute_rule},#{item.execute_img})
+		</foreach>
+	</insert>
+	
+	<insert id="addMonitorTopic" parameterType="TaskTopicBean" useGeneratedKeys="true" keyProperty="topic_id">
+		insert into s_monitor_topic(task_id,cid,sort,field_type,label,descript,required,img_url,skipto,answer_rules,execute_rule,execute_img) values
+		 (#{task_id},#{cid},#{sort},#{field_type},#{label},#{descript},#{required},#{img_url},#{skipto},#{answer_rules},#{execute_rule},#{execute_img})
+	</insert>
+	
+	<insert id="addMonitorOptions" parameterType="HashMap" >
+		insert into s_monitor_option(task_id,topic_id,option_title,option_value,checked,img_url,skipto) values
+		<foreach collection="optionList" item="item" separator=","  index="index">
+		 (#{task_id},#{item.topic_id},#{item.label},#{item.option_value},#{item.checked},#{item.img_url},#{item.skipto})
+		</foreach>
+	</insert>
+	
+	<insert id="addMonitorRestrain" parameterType="TaskRestrainBean">
+		insert into s_monitor_restrain(task_id,be_located,execute_address,execute_range,execute_lat_lng,water_marker,group_id,sex)
+		values (#{task_id},#{be_located},#{execute_address},#{execute_range},#{execute_lat_lng},#{water_marker},#{group_id},#{sex} )
+	</insert>
+	
+	<insert id="addMonitorCity" parameterType="HashMap">
+		insert into s_monitor_city (task_id,city_code,city_level) values (#{task_id},#{city.city_code},#{city.city_level})
+	</insert>
+	
+	<insert id="addMonitorAims" parameterType="HashMap">
+		insert into
+		s_monitor_aim(task_id,aim_id,aim_value)
+		values
+		<foreach collection="aimList" item="item" separator=","  index="index">
+			 (#{task_id},#{item.aim_id},#{item.aim_value})
+         </foreach>
+	</insert>
+	
+	<select id="getTaskMainInfo" parameterType="String" resultType="MonitorBean">
+		select task_id,name,vendor_id,create_user,agent
+		from s_monitor
+		where task_id = #{task_id}
+	</select>
+	
+	<select id="getMonitorById" parameterType="HashMap" resultMap="MonitorInfo">
+	  select sm.task_id,sm.name,sm.descript,sm.task_type_id,sm.salary,sm.audit_times,sm.brand_id,sm.a_exe_time,sm.b_exe_time,sm.c_exe_time,sm.vendor_id,sm.create_user,
+	  		 DATE_FORMAT(sm.do_btime,'%Y-%m-%d %H:%i') as do_btime,DATE_FORMAT(sm.do_etime,'%Y-%m-%d %H:%i') as do_etime,
+	  		 DATE_FORMAT(sm.show_btime,'%Y-%m-%d %H:%i') as show_btime,DATE_FORMAT(sm.show_etime,'%Y-%m-%d %H:%i') as show_etime,
+			 smr.be_located,smr.execute_address,smr.execute_lat_lng,smr.execute_range,smr.water_marker,smr.group_id,smr.sex,
+			 smc.city_code,smc.city_level,
+			 stt.name task_type_name,
+			 sb.brand_name,
+			 smt.cid,smt.sort,smt.field_type,smt.label,smt.descript description,smt.required,smt.img_url,smt.skipto,smt.answer_rules,smt.execute_rule,smt.execute_img,
+			 sma.task_id,sma.aim_id,sma.aim_value,
+			 smo.option_title,smo.option_value,smo.checked,smo.img_url image,smo.skipto skip_to
+		from s_monitor sm
+		left join s_task_type stt on sm.task_type_id = stt.task_type_id
+		left join s_brand sb on sm.brand_id = sb.brand_id
+		left join s_monitor_city smc on sm.task_id = smc.task_id
+		left join s_monitor_restrain smr on sm.task_id = smr.task_id
+		left join s_monitor_aim sma on sm.task_id = sma.task_id
+		left join s_monitor_topic smt on sm.task_id = smt.task_id
+		left join s_monitor_option smo on smt.topic_id = smo.topic_id
+		where sm.task_id = #{task_id} and sm.is_del=0
+	</select>
+	
+	<resultMap type="MonitorBean" id="MonitorInfo">
+		<id column="task_id" property="task_id"></id>
+		<result column="name" property="name" />
+		<result column="descript" property="descript" />
+		<result column="task_type_id" property="task_type_id" />
+		<result column="task_type_name" property="task_type_name" />
+		<result column="salary" property="salary" />
+		<result column="audit_times" property="audit_times" />
+		<result column="brand_id" property="brand_id" />
+		<result column="brand_name" property="brand_name" />
+		<result column="a_exe_time" property="a_exe_time" />
+		<result column="b_exe_time" property="b_exe_time" />
+		<result column="c_exe_time" property="c_exe_time" />
+		<result column="do_btime" property="do_btime" />
+		<result column="do_etime" property="do_etime" />
+		<result column="show_btime" property="show_btime" />
+		<result column="show_etime" property="show_etime" />
+		<result column="vendor_id" property="vendor_id" />
+		<result column="create_user" property="create_user" />
+		<association property="trb" javaType="TaskRestrainBean" >
+			<result column="be_located" property="be_located"/>
+			<result column="execute_address" property="execute_address"/>
+			<result column="execute_lat_lng" property="execute_lat_lng"/>
+			<result column="execute_range" property="execute_range"/>
+			<result column="water_marker" property="water_marker"/>
+			<result column="group_id" property="group_id"/>
+			<result column="sex" property="sex"/>
+		</association>
+		<association property="city" javaType="CityBean" >
+			<result property="city_code" column="city_code" />
+			<result property="city_level"  column="city_level" />
+		</association>
+		<collection property="topicList" ofType="TaskTopicBean">
+			<result column="cid" property="cid"/>
+			<result column="sort" property="sort"/>
+			<result column="field_type" property="field_type"/>
+			<result column="label" property="label"/>
+			<result column="description" property="descript"/>
+			<result column="required" property="required"/>
+			<result column="img_url" property="img_url"/>
+			<result column="skipto" property="skipto"/>
+			<result column="answer_rules" property="answer_rules"/>
+			<result column="execute_rule" property="execute_rule"/>
+			<result column="execute_img" property="execute_img"/>
+			<collection property="options" ofType="TaskOptionBean">
+				<result column="option_title" property="label" />
+				<result column="option_value" property="option_value" />
+				<result column="checked" property="checked" />
+				<result column="image" property="img_url" />
+				<result column="skip_to" property="skipto" />
+			</collection>
+		</collection>
+		<collection property="aimList" ofType="TaskAimBean" >
+			<result property="task_id" column="task_id" />
+			<result property="aim_id" column="aim_id" />
+			<result property="aim_value" column="aim_value" />
+		</collection>
+	</resultMap>
+	
+	
+	<!-- 待指派任务列表 -->
+	<select id="designateMonitorList" parameterType="MonitorSearch" resultType="MonitorListBean">
+		SELECT DISTINCT
+		  sm.task_id,
+		  sm.name,
+		  (select xc.city_name FROM XT_CITY xc,S_MONITOR_CITY smc  WHERE sm.task_id = smc.task_id AND xc.city_code = smc.city_code AND xc.city_level = 4) AS city_name, 
+		  (SELECT stt.name FROM S_TASK_TYPE stt WHERE stt.task_type_id = sm.task_type_id) AS task_type_name,
+		  sm.show_btime,
+		  sm.do_etime,
+		  sm.salary,
+		  sm.remark,
+		  (select cc.moble from c_customer cc where cc.customer_id = sm.create_user ) as create_user,
+		  sm.create_type,
+		  (select xm.manager_name from xt_manager xm where xm.manager_id = sm.agent) as agent,
+		  cv.vendor_name
+		FROM 
+			S_MONITOR sm,c_vendor cv
+		WHERE 
+			sm.vendor_id = cv.vendor_id AND 
+			sm.is_del = 0 AND sm.status = 2
+			<if test="name != null and name != '' ">
+				AND sm.name LIKE CONCAT('%',#{name},'%')
+			</if>
+			<if test="task_id != null and task_id != '' ">
+				AND sm.task_id = #{task_id}
+			</if>
+			<if test="vendor_name != null and vendor_name != '' ">
+				AND cv.vendor_name LIKE CONCAT('%',#{vendor_name},'%')
+			</if>
+		AND sm.task_id in(
+		select smu.task_id from S_MONITOR_execute smu where smu.is_history=0  
+		GROUP BY smu.task_id 
+		HAVING max(case when smu.status=0 then 1 
+		when smu.status = 5 then 0
+		when smu.status = 6 then 0
+		WHEN smu.`status` = 1 AND NOW() > smu.do_etime THEN 0
+		WHEN smu.status = 2 AND NOW() > smu.do_etime THEN 0
+		ELSE  2
+		end)=1)
+		ORDER BY sm.do_btime
+		<if test="havePage == 1">
+            limit #{start},#{rows}
+        </if>
+	</select>
+	
+	<!-- 待指派任务列表 -->
+	<select id="designateMonitorCount" parameterType="MonitorSearch" resultType="int">
+		SELECT 
+		 count(1)
+		FROM 
+			S_MONITOR sm,c_vendor cv
+		WHERE 
+			sm.vendor_id = cv.vendor_id AND 
+			sm.is_del = 0 AND sm.status = 2
+			<if test="name != null and name != '' ">
+				AND sm.name LIKE CONCAT('%',#{name},'%')
+			</if>
+			<if test="task_id != null and task_id != '' ">
+				AND sm.task_id = #{task_id}
+			</if>
+			<if test="vendor_name != null and vendor_name != '' ">
+				AND cv.vendor_name LIKE CONCAT('%',#{vendor_name},'%')
+			</if>
+		AND sm.task_id in(
+		select smu.task_id from S_MONITOR_execute smu where smu.is_history=0  
+		GROUP BY smu.task_id 
+		HAVING max(case when smu.status=0 then 1 
+		when smu.status = 5 then 0
+		when smu.status = 6 then 0
+		WHEN smu.`status` = 1 AND NOW() > smu.do_etime THEN 0
+		WHEN smu.status = 2 AND NOW() > smu.do_etime THEN 0
+		ELSE  2
+		end)=1)
+	</select>
+	
+	<!-- 任务指派  -->
+ 	<update id="designateTask" parameterType="String">
+		UPDATE S_MONITOR_execute smu , S_MONITOR sm
+		SET smu.status = 1,smu.designate_time = NOW(), smu.last_update_time = NOW(),
+			smu.do_btime =  case when NOW() &lt; sm.do_btime then  sm.do_btime else NOW() end,
+			smu.do_etime = 	case when NOW() &lt; sm.do_btime and DATE_ADD(sm.do_btime, INTERVAL smu.apply_exe_time HOUR) &lt; sm.do_etime 
+			then DATE_ADD(sm.do_btime, INTERVAL smu.apply_exe_time HOUR)
+					 when NOW() &gt;= sm.do_btime and DATE_ADD(NOW(), INTERVAL smu.apply_exe_time HOUR) &lt; sm.do_etime then DATE_ADD(NOW(), INTERVAL smu.apply_exe_time HOUR)
+           else sm.do_etime end
+		WHERE smu.task_id = sm.task_id And smu.execute_id = #{execute_id} and smu.status = 0
+    </update>
+    
+    <!-- 待指派任务申请人列表总数 -->
+    <select id="designateMonitorApplyCount" parameterType="String" resultType="int">
+		SELECT 
+			COUNT(1)
+		FROM 
+			S_MONITOR_execute smu
+		WHERE 
+			 smu.status = 0  AND smu.is_history =0
+			 AND smu.task_id =#{task_id}
+	</select>
+	
+	<!-- 待指派任务申请人列表 -->
+	<select id="designateMonitorApplyList" parameterType="String" resultType="MonitorExecuteBean">
+		SELECT 
+			smu.execute_id,
+			smu.apply_time,
+			smu.apply_exe_time,
+			smu.apply_reason,
+			au.moble,
+			au.nick_name,
+			smu.task_id,
+			smu.executor,
+			(SELECT
+		      acd.score + acd.total
+		    FROM APP_CREDIT_DATA acd
+		    WHERE acd.user_id = smu.executor and acd.task_biz = 1) AS credit,
+			au.remark,
+			auz.score as zhima_score,
+			auz.update_time,
+			auz.is_authorized
+		FROM 
+			S_MONITOR_execute smu
+			left join APP_USER au
+			ON smu.executor = au.user_id 
+			LEFT JOIN app_user_zhima auz
+			ON au.user_id = auz.user_id
+		WHERE 
+			 smu.status = 0  AND smu.is_history =0
+			 AND smu.task_id =#{task_id}
+		ORDER BY smu.apply_time
+	</select>
+	
+	<select id="getMonitorUserDetail" parameterType="String" resultType="UserBean">
+    	SELECT
+    	  au.user_id,
+		  au.moble,
+		  au.sex,
+		  (SELECT xc.city_name FROM XT_CITY xc WHERE xc.district_code = au.city and city_level=5) AS city, 
+		   au.nick_name,
+		   au.account,
+		  (SELECT  COUNT(*) FROM S_MONITOR_EXECUTE smu WHERE smu.executor = au.user_id) AS apply_count,
+		  (SELECT  COUNT(*) FROM S_MONITOR_EXECUTE smu WHERE smu.executor = au.user_id AND smu.status = 4  AND smu.is_history =0) AS complete_count,
+		   au.remark
+		FROM APP_USER au
+		WHERE au.user_id = #{user_id}
+    </select>
+    
+	<select id="getMonitorExecuteDetail" parameterType="String" resultType="MonitorExecuteBean">
+		SELECT
+		smu.execute_id,
+		sm.name,
+		smu.task_id,
+		sm.salary,
+		smu.executor,
+		smu.apply_time,
+		smu.designate_time,
+		smu.upload_time,
+		smu.accept_time,
+		smu.do_btime as u_do_btime,
+		smu.do_etime as u_do_etime,
+		smu.status,
+		smu.apply_reason,
+		smu.accept_reason,
+		smu.apply_exe_time,
+		au.registration_id,
+		sm.do_btime,
+		au.platform,
+		au.brand
+		FROM S_MONITOR_execute smu, S_MONITOR sm,APP_USER au
+		WHERE sm.task_id = smu.task_id AND smu.execute_id = #{execute_id} AND smu.is_history =0 AND smu.executor = au.user_id
+	</select>
+	
+	
+	<select id="checkCityExist" parameterType="String" resultType="int">
+		SELECT COUNT(1) FROM xt_city WHERE city_name = #{city_name} and city_level = 4
+	</select>
+	
+	<select id="checkTaskExist" parameterType="String" resultType="int">
+		SELECT COUNT(1) FROM s_monitor WHERE task_id = #{task_id}
+	</select>
+	
+ 	<update id="truncateTable">
+        truncate table ${_parameter}
+    </update>
+    
+    <insert id="addTaskBatchTemp" parameterType="List">
+    	insert into s_monitor_task_batch(city_name,task_name,name1,name2,name3,name4) values 
+    	<foreach collection="list" item="item" separator=","  index="index">
+    		(#{item.city_name},#{item.task_name},#{item.name1},#{item.name2},#{item.name3},#{item.name4})
+    	</foreach>
+    </insert>
+    
+    <select id="callTaskBatch" parameterType="Map" statementType="CALLABLE" resultType="int">
+    	<![CDATA[  
+    		{ call P_ADD_MONITOR_BATCH(#{vendor_id},#{customer_id},#{task_id},#{status}) }  
+  		]]>  
+    </select>
+    
+</mapper>

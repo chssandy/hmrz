@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.inspecteResult">
+	<select id="getInspecteResultList"  parameterType="InspecteResultSearch" resultType="InspecteResultBean">
+		SELECT 
+			sme.execute_id,
+			sm.task_id,
+			sm.name, 
+			sm.vendor_id,
+			cv.vendor_name,
+			sm.create_user,
+			(select cc.moble from c_customer cc where cc.customer_id = sm.create_user) as create_user_name,
+			sm.agent,
+			(select xm.manager_name from xt_manager xm where xm.manager_id = sm.agent) as agent_name,
+			sm.task_type_id,
+			stt.`name` as task_type_name,
+			sm.salary,
+			sm.plat_fee,
+			sme.status as execute_status,
+			au.moble,
+			sme.executor,
+			sme.apply_time,
+			sme.upload_time,
+			sm.remark,
+			sme.acceptor,
+			(select cc.moble from c_customer cc where cc.customer_id = sme.acceptor) as acceptor_name,
+			sme.accept_time,
+			sme.agent as audit_agent,
+			(select xm.manager_name from xt_manager xm where xm.manager_id = sme.agent) as audit_agent_name,
+			sm.create_time as publish_time,
+			CASE WHEN sme.status = 4 THEN sm.salary ELSE 0 END as actual_cost,
+			CASE WHEN sme.status = 4 THEN sm.plat_fee ELSE 0 END as platform_cost,
+			sm.audit_times
+		FROM  s_inspecte sm,s_inspecte_execute sme,c_vendor cv ,app_user au,s_task_type stt
+		WHERE sm.task_id = sme.task_id AND sm.vendor_id = cv.vendor_id AND sme.executor = au.user_id
+		AND sm.task_type_id = stt.task_type_id 
+		AND sm.is_del = 0 
+		AND sme.is_history = 0
+		<choose>
+	    	<when test="is_audit == 0">
+	    	    AND sme.status &lt;&gt; 3 AND sme.status &gt; 0 AND sme.status &lt; 6
+	    	</when>
+	    	<otherwise>
+	    	    AND sme.status = 3 AND sm.create_type = 0
+	    	</otherwise>
+	    </choose>
+   		<if test="task_id != null and task_id != ''">
+			and sm.task_id = #{task_id}
+		</if>
+    	<if test="name != null and name != ''">
+			and sm.name LIKE CONCAT('%',#{name},'%') 
+		</if>
+		<if test="task_type !=null and task_type !='' and task_type != '-1' ">
+			and sm.task_type_id = #{task_type}
+		</if>
+		<if test="vendor_name != null and vendor_name != ''">
+			and cv.vendor_name LIKE CONCAT('%',#{vendor_name},'%') 
+		</if>
+		<if test="moble != null and moble != ''">
+			and au.moble = #{moble}
+		</if>
+		<if test="status != null and status != '' and status !='-1'">
+			and sme.status = #{status}
+		</if>
+		<if test="execute_id != null and execute_id != ''">
+			and sme.execute_id = #{execute_id}
+		</if>
+	    ORDER BY sme.execute_id
+    	<if test="is_audit == 0">
+    	   desc
+    	</if>
+	    <if test="havePage == 1">
+            limit #{start},#{rows}
+        </if>
+	</select>
+	
+	<select id="getInspecteResultCount" parameterType="InspecteResultSearch" resultType="int" >
+	   	SELECT count(1)
+	   	FROM  s_inspecte sm,s_inspecte_execute sme,c_vendor cv ,app_user au
+		WHERE sm.task_id = sme.task_id AND sm.vendor_id = cv.vendor_id AND sme.executor = au.user_id
+		AND sm.is_del = 0 
+		AND sme.is_history = 0
+		<choose>
+	    	<when test="is_audit == 0">
+	    	    AND sme.status &lt;&gt; 3 AND sme.status &gt; 0 AND sme.status &lt; 6
+	    	</when>
+	    	<otherwise>
+	    	    AND sme.status = 3 AND sm.create_type = 0
+	    	</otherwise>
+	    </choose>
+   		<if test="task_id != null and task_id != ''">
+			and sm.task_id = #{task_id}
+		</if>
+    	<if test="name != null and name != ''">
+			and sm.name LIKE CONCAT('%',#{name},'%') 
+		</if>
+		<if test="task_type !=null and task_type !='' and task_type != '-1' ">
+			and sm.task_type_id = #{task_type}
+		</if>
+		<if test="vendor_name != null and vendor_name != ''">
+			and cv.vendor_name LIKE CONCAT('%',#{vendor_name},'%') 
+		</if>
+		<if test="moble != null and moble != ''">
+			and au.moble = #{moble}
+		</if>
+		<if test="status != null and status != ''  and status !='-1' ">
+			and sme.status = #{status}
+		</if>
+		<if test="execute_id != null and execute_id != ''">
+			and sme.execute_id = #{execute_id}
+		</if>
+	</select>
+	
+	<select id="getInspecteInfo"  parameterType="InspecteResultSearch" resultMap="resultData">
+	    SELECT
+			sm.task_id,
+			sm. NAME,
+			sm.descript,
+			sm.vendor_id,
+			sm. STATUS,
+			sm.salary,
+			sm.plat_fee,
+			sme.execute_id,
+			sme.executor,
+			sme.score,
+			sme.accept_time,
+			sme.upload_time,
+			sme.accept_reason,
+			sme.is_passed,
+			sme.passed_reason,
+			sme.exe_city,
+			sme. STATUS AS execute_status,
+			sma.aim_value,
+			au.registration_id,
+			au.platform,
+			au.brand
+		FROM
+			s_inspecte sm LEFT JOIN s_inspecte_execute sme on sm.task_id = sme.task_id 
+			LEFT JOIN s_inspecte_aim sma on sm.task_id = sma.task_id
+			LEFT JOIN app_user au on sme.executor = au.user_id
+		WHERE
+		 sm.is_del = 0
+		AND sme.execute_id =  #{execute_id} AND sme.is_history = 0 
+	</select>
+	
+	<resultMap id="resultData" type="InspecteResultBean">
+		<result column="task_id" property="task_id" />
+		<result column="name" property="name" />
+		<result column="descript" property="descript" />
+		<result column="vendor_id" property="vendor_id" />
+		<result column="status" property="status" />
+		<result column="salary" property="salary" />
+		<result column="plat_fee" property="plat_fee" />
+		<result column="execute_id" property="execute_id" />
+		<result column="executor" property="executor" />
+		<result column="score" property="score" />
+		<result column="accept_time" property="accept_time" />
+		<result column="upload_time" property="upload_time" />
+		<result column="accept_reason" property="accept_reason" />
+		<result column="is_passed" property="is_passed" />
+		<result column="passed_reason" property="passed_reason" />
+		<result column="exe_city" property="exe_city" />
+		<result column="execute_status" property="execute_status" />
+		<result column="registration_id" property="registration_id" />
+		<result column="platform" property="platform" />
+		<collection property="aim" ofType="String" >
+			<result column="aim_value" property="aim_value" />
+		</collection>
+	</resultMap>
+	
+	<select id="getInspecteAnswer"  parameterType="InspecteResultSearch" resultType="TaskAnswerBean">
+		select 
+			TT.cid,
+			TT.label,
+			TT.descript,
+			TT.required,
+			TT.field_type ,
+			TT.options,
+			TT.img_url,
+			GROUP_CONCAT(ssa.value) as value  
+		from 
+		(select
+			sst.sort,
+			sst.topic_id,
+			sst.cid,
+			sst.required,
+			sst.label,
+			sst.descript,
+			sst.field_type ,
+			sst.img_url,
+			GROUP_CONCAT(sso.option_title ORDER BY sso.option_value asc) as options
+		FROM
+			(select DISTINCT topic_id,cid from s_inspecte_answer ssa,s_inspecte ss 
+			 where ssa.task_id = ss.task_id and execute_id = #{execute_id}
+			 ) as T
+		LEFT JOIN s_inspecte_topic sst 
+				ON  T.topic_id = sst.topic_id
+		LEFT JOIN s_inspecte_option sso
+				ON T.topic_id = sso.topic_id
+		GROUP BY T.cid
+		) as TT
+		LEFT JOIN s_inspecte_answer ssa
+				ON ssa.execute_id = #{execute_id}
+				and TT.topic_id = ssa.topic_id and TT.cid = ssa.cid
+		GROUP BY TT.cid
+		ORDER BY TT.sort
+	</select>
+	
+	<update id="passTask" parameterType="InspecteResultBean">
+	    UPDATE s_inspecte_execute sme INNER JOIN s_inspecte sm ON sme.task_id = sm.task_id
+	    SET sme.status = 4, sme.score = #{score}, 
+	    	sme.acceptor = sm.create_user,sme.accept_time = NOW(),
+	    	sme.is_agent = 1,sme.agent = #{audit_agent},
+	    	sme.is_passed = #{is_passed}, sme.passed_reason = #{passed_reason},
+	    	sm.status = 4,sm.complete_time = NOW()
+	    WHERE sme.execute_id = #{execute_id} AND sme.status = 3
+	</update>
+	
+	<update id="rejectTask" parameterType="InspecteResultBean">
+		UPDATE s_inspecte_execute sme INNER JOIN s_inspecte sm ON sme.task_id = sm.task_id
+		SET sme.status = 5, sme.score=#{score},
+			sme.acceptor = sm.create_user,sme.accept_time = NOW(),
+	    	sme.is_agent = 1,sme.agent = #{audit_agent},
+			sme.accept_reason = #{accept_reason} 
+		WHERE sme.execute_id = #{execute_id} AND sme.status = 3
+	</update>
+	
+	<update id="incomeBalance" parameterType="InspecteResultBean">
+		UPDATE APP_USER  
+		SET balance = balance + #{salary} 
+		WHERE user_id = #{executor}
+	</update>
+</mapper>

@@ -1,0 +1,113 @@
+<div class="page-content">
+	<div style="margin-bottom: 10px;" class="form-horizontal">
+		<div class="span7" id="acct-password-row" style="width: 50%;float: left;">
+			<div class="form-group">
+				<label for="name" class="col-sm-3 control-label no-padding-right"> 用户名 </label>
+				<div class="col-sm-9">
+					<input type="text" class="col-xs-10 col-sm-5 span4" placeholder="用户名" name="name" id="name">
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="page-header" style="margin-bottom: 40px">
+		<h1>
+			<span class="header_button_span " >
+				<button class="btn btn-primary" id="search-button">查询</button>&nbsp;&nbsp;
+				<button class="btn" id="add-button">新增</button>&nbsp;&nbsp;
+				<button class="btn" id="edit-button">修改</button>&nbsp;&nbsp;
+				<button class="btn" id="del-buttion">删除</button>&nbsp;&nbsp;
+			</span>
+		</h1>
+	</div>
+
+	<div class="row">
+		<div class="col-xs-12">
+			<table id="managerTables"></table>
+			<div id="pager"></div>
+		</div>
+	</div>
+</div>
+
+<div id='managerAdd' style="display: none">
+	<form id="managerForm" name="managerForm" class="form-horizontal">
+		<div class="form-group">
+			<label class="col-sm-3 control-label no-padding-right" for="form-field-1">用户名</label>
+
+			<div class="col-sm-9">
+				<input type="text" id="manager_name" name="manager_name" placeholder="用户名" class="col-xs-10 col-sm-7"/>
+			</div>
+		</div>
+
+		<div class="form-group" >
+			<label class="col-sm-3 control-label no-padding-right" for="form-field-1">密 码</label>
+
+			<div class="col-sm-9">
+				<input type="password" id="password" name="password" placeholder="密码" class="col-xs-10 col-sm-7" data-rule="required;password"/>
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="col-sm-3 control-label no-padding-right" for="form-field-1">确认密码</label>
+
+			<div class="col-sm-9">
+				<input type="password" id="password_check" name="password_check" placeholder="确认密码" class="col-xs-10 col-sm-7" data-rule="required;password;match[password]" data-msg-match="与上面的密码不同"/>
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="col-sm-3 control-label no-padding-right" for="form-field-1">角 色</label>
+
+			<div class="col-sm-9" id="role_check">
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="col-sm-3 control-label no-padding-right" for="form-field-1">手 机</label>
+
+			<div class="col-sm-9">
+				<input type="text" id="moble" name="moble" placeholder="手机" class="col-xs-10 col-sm-7" data-rule="required;mobile"/>
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="col-sm-3 control-label no-padding-right" for="form-field-1">真实姓名</label>
+
+			<div class="col-sm-9">
+				<input type="text" id="real_name" name="real_name" placeholder="真实姓名" class="col-xs-10 col-sm-7" data-rule="required"/>
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="col-sm-3 control-label no-padding-right" for="form-field-1">邮 箱</label>
+
+			<div class="col-sm-9">
+				<input type="text" id="email" name="email" placeholder="邮箱" class="col-xs-10 col-sm-7" data-rule="required;email;"/>
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="col-sm-3 control-label no-padding-right" for="form-field-1">备 注</label>
+
+			<div class="col-sm-9">
+				<textarea class="col-xs-10 col-sm-11" row="3" id="remark" name="remark" style="height:70px" placeholder="备注"></textarea>
+			</div>
+			<hr/>
+		</div>
+
+		<div class="clearfix form-actions" style="margin-bottom: 0px; margin-top: 0px">
+			<div class="col-md-offset-3 col-md-9" style="margin-left: 15%">
+				<button class="btn btn-info" type="button" id="managerSubmit">
+					<i class="icon-ok bigger-110"></i>
+					保存
+				</button>
+				&nbsp; &nbsp; &nbsp;
+				<button class="btn" type="reset" id="managerReset">
+					<i class="icon-undo bigger-110"></i>
+					重置
+				</button>
+			</div>
+		</div>
+	</form>
+</div>
+
+<script src="pages/system/manager/manager.js"></script>

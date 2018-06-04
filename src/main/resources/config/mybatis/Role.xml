@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.role">
+
+	<select id="count" parameterType="RoleSearch" resultType="int">
+		SELECT
+		  COUNT(*)
+		FROM XT_ROLE XR
+		WHERE XR.is_del = 0
+		<if test="role_name != null and role_name != ''">
+			AND XR.role_name = #{role_name}
+		</if>
+	</select>
+	
+	<select id="list" parameterType="RoleSearch" resultType="RoleBean">
+		SELECT
+		  XR.role_id,
+		  XR.role_name,
+		  XR.priority,
+		  XR.create_time,
+		  XR.create_user,
+		  XR.remark
+		FROM XT_ROLE XR
+		WHERE XR.is_del = 0
+		<if test="role_name != null and role_name != ''">
+			AND XR.role_name = #{role_name}
+		</if>
+		<if test="havePage == 1">
+			LIMIT #{start},#{rows}
+		</if>
+	</select>
+	
+	<insert id="add" parameterType="RoleBean" useGeneratedKeys="true" keyProperty="role_id">
+		INSERT INTO XT_ROLE (role_name, priority, create_user, remark)
+		  VALUES (#{role_name}, #{priority}, #{create_user}, #{remark})
+	</insert>
+	
+	<update id="del" parameterType="String">
+		UPDATE XT_ROLE SET is_del = 1 WHERE role_id IN (${_parameter})
+	</update>
+	
+	<update id="update" parameterType="RoleBean">
+		UPDATE XT_ROLE SET
+		role_name = #{role_name},
+		remark = #{remark}
+		WHERE is_del = 0 
+		AND role_id = #{role_id}
+	</update>
+	
+	<!-- 根据用户和模块父id 查询模块列表 -->
+	<select id="accessibleModule" parameterType="HashMap" resultType="ModuleBean">
+        SELECT DISTINCT
+		  XM.module_id,
+          XM.module_name,
+          XM.module_url,
+          XM.remark,
+          XM.icon,
+          (SELECT
+              COUNT(*)
+            FROM XT_MODULE XM1
+            WHERE XM.module_id = XM1.father_id AND
+            XM1.is_del = 0) AS childrenNum
+        <if test="manager_id == 1">
+            FROM XT_MODULE XM
+	        WHERE XM.father_id = #{parent_id}
+	        AND XM.is_del = 0
+        </if>
+        <if test="manager_id != 1">
+        FROM XT_MANAGER XMA,
+             XT_MANAGER_ROLE XMR,
+             XT_ROLE XR,
+             XT_MODULE XM,
+             XT_ROLE_MODULE XRM
+        WHERE XMA.manager_id = #{manager_id}
+				AND XMA.manager_id = XMR.manager_id
+        AND XMR.role_id = XR.role_id 
+        AND XMR.role_id = XRM.role_id
+				AND XRM.module_id = XM.module_id
+        AND XM.father_id = #{parent_id}
+        AND XMA.is_del = 0
+        AND XMR.is_del = 0
+        AND XR.is_del = 0
+        AND XM.is_del = 0
+        AND XRM.is_del = 0
+        </if>
+        ORDER BY - XM.sort_level DESC, XM.create_time
+	</select>
+	
+	<select id="getRoleModules" parameterType="String" resultType="String">
+		SELECT
+		  GROUP_CONCAT(xrm.module_id)
+		FROM XT_ROLE_MODULE xrm
+		WHERE xrm.is_del = 0 AND xrm.role_id = #{role_id}
+	</select>
+	
+	<update id="delRoleModules" parameterType="String">
+		UPDATE XT_ROLE_MODULE SET is_del = 1 WHERE role_id = #{role_id}
+	</update>
+	
+	<insert id="addRoleModules" parameterType="HashMap">
+		INSERT XT_ROLE_MODULE(role_id, module_id, create_user) VALUES
+		 <foreach collection="modules" item="module_id" index="index" separator=",">
+		 	(#{role_id}, #{module_id}, #{operator})
+		 </foreach>
+	</insert>
+</mapper>

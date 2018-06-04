@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.mediaResult">
+	<select id="getMediaResultList"  parameterType="MediaResultSearch" resultType="MediaResultBean">
+		select 
+			sm.task_id,
+			sm.name, 
+			sm.vendor_id,
+			cv.vendor_name,
+			sm.create_user,
+			(select cc.moble from c_customer cc where cc.customer_id = sm.create_user) as create_user_name,
+			sm.agent,
+			(select xm.manager_name from xt_manager xm where xm.manager_id = sm.agent) as agent_name,
+			sm.task_type_id,
+			stt.`name` as task_type_name,
+			sm.create_time as publish_time,
+			sm.execute_times,
+			sm.salary,
+			sm.plat_fee,
+			sm.status,
+			sm.remark,
+			sm.audit_times,
+			(select count(*) from s_media_execute sse where sse.task_id = sm.task_id) as total_recovery,
+			(select count(*) from s_media_execute sse where sse.task_id = sm.task_id and sse.`status` = 4 ) as audit_pass,
+			sm.do_btime,
+			sm.do_etime
+		
+   		FROM  s_media sm,c_vendor cv ,s_task_type stt
+		WHERE sm.vendor_id = cv.vendor_id
+		AND stt.father_id = #{father_id}
+		AND sm.task_type_id = stt.task_type_id 
+		AND sm.is_del = 0 
+   	    AND sm.status &gt; 1 AND sm.status &lt; 7 AND sm.status &lt;&gt; 3
+   		<if test="task_id != null and task_id != ''">
+			and sm.task_id = #{task_id}
+		</if>
+    	<if test="name != null and name != ''">
+			and sm.name LIKE CONCAT('%',#{name},'%') 
+		</if>
+		<if test="task_type !=null and task_type !='' and task_type != '-1' ">
+			and sm.task_type_id = #{task_type}
+		</if>
+		<if test="vendor_name != null and vendor_name != ''">
+			and cv.vendor_name LIKE CONCAT('%',#{vendor_name},'%') 
+		</if>
+		<if test="status != null and status != '' and status !='-1'">
+			and sm.status = #{status}
+		</if>
+	    ORDER BY sm.task_id desc
+	    <if test="havePage == 1">
+            limit #{start},#{rows}
+        </if>
+	</select>
+	
+	<select id="getMediaResultCount" parameterType="MediaResultSearch" resultType="int" >
+	   	select count(1)
+		FROM  s_media sm,c_vendor cv,s_task_type stt
+		WHERE sm.vendor_id = cv.vendor_id
+		AND sm.task_type_id = stt.task_type_id 
+		AND stt.father_id = #{father_id}
+		AND sm.is_del = 0 
+	 	AND sm.status &gt; 1 AND sm.status &lt; 7 AND sm.status &lt;&gt; 3
+   		<if test="task_id != null and task_id != ''">
+			and sm.task_id = #{task_id}
+		</if>
+    	<if test="name != null and name != ''">
+			and sm.name LIKE CONCAT('%',#{name},'%') 
+		</if>
+		<if test="task_type !=null and task_type !='' and task_type != '-1' ">
+			and sm.task_type_id = #{task_type}
+		</if>
+		<if test="vendor_name != null and vendor_name != ''">
+			and cv.vendor_name LIKE CONCAT('%',#{vendor_name},'%') 
+		</if>
+		<if test="status != null and status != ''  and status !='-1' ">
+			and sm.status = #{status}
+		</if>
+	</select>
+	
+
+	<select id="getMediaAuditList"  parameterType="MediaResultSearch" resultType="MediaResultBean">
+		select 
+			sme.execute_id,
+			sm.task_id,
+			sm.name, 
+			sm.vendor_id,
+			cv.vendor_name,
+			sm.create_user,
+			(select cc.moble from c_customer cc where cc.customer_id = sm.create_user) as create_user_name,
+			sm.agent,
+			(select xm.manager_name from xt_manager xm where xm.manager_id = sm.agent) as agent_name,
+			sm.task_type_id,
+			stt.`name` as task_type_name,
+			sm.create_time as publish_time,
+			sm.execute_times,
+			sm.salary,
+			sm.plat_fee,
+			sm.status,
+			sme.status as execute_status,
+			au.moble,
+			sme.executor,
+			sme.upload_time,
+			sm.remark,
+			sme.acceptor,
+			(select cc.moble from c_customer cc where cc.customer_id = sme.acceptor) as acceptor_name,
+			sme.accept_time,
+			sme.agent as audit_agent,
+			(select xm.manager_name from xt_manager xm where xm.manager_id = sme.agent) as audit_agent_name,
+			sm.create_time as publish_time,
+			sm.audit_times
+   		FROM  s_media sm,s_media_execute sme,c_vendor cv ,app_user au,s_task_type stt
+		WHERE sm.task_id = sme.task_id AND sm.vendor_id = cv.vendor_id AND sme.executor = au.user_id
+		AND stt.father_id = #{father_id}
+		AND sm.task_type_id = stt.task_type_id 
+		AND sm.is_del = 0 
+		AND sm.status = 2
+   	    AND sme.status = 3 AND sm.create_type = 0
+   		<if test="task_id != null and task_id != ''">
+			and sm.task_id = #{task_id}
+		</if>
+    	<if test="name != null and name != ''">
+			and sm.name LIKE CONCAT('%',#{name},'%') 
+		</if>
+		<if test="task_type !=null and task_type !='' and task_type != '-1' ">
+			and sm.task_type_id = #{task_type}
+		</if>
+		<if test="vendor_name != null and vendor_name != ''">
+			and cv.vendor_name LIKE CONCAT('%',#{vendor_name},'%') 
+		</if>
+		<if test="execute_id != null and execute_id != ''">
+			and sme.execute_id = #{execute_id}
+		</if>
+		<if test="moble != null and moble != ''">
+			and sme.executor = (select user_id from app_user au where au.moble = #{moble})
+		</if>
+	    ORDER BY sme.execute_id
+	    <if test="havePage == 1">
+            limit #{start},#{rows}
+        </if>
+	</select>
+	
+	<select id="getMediaAuditCount" parameterType="MediaResultSearch" resultType="int" >
+	   	select count(1)
+		FROM  s_media sm,s_media_execute sme,c_vendor cv,s_task_type stt
+		WHERE 
+		sm.task_id = sme.task_id AND sm.vendor_id = cv.vendor_id AND sm.task_type_id = stt.task_type_id 
+		AND stt.father_id = #{father_id}
+		AND sm.is_del = 0 
+		AND sm.status = 2
+   	    AND sme.status = 3 AND sm.create_type = 0
+   		<if test="task_id != null and task_id != ''">
+			and sm.task_id = #{task_id}
+		</if>
+    	<if test="name != null and name != ''">
+			and sm.name LIKE CONCAT('%',#{name},'%') 
+		</if>
+		<if test="task_type !=null and task_type !='' and task_type != '-1' ">
+			and sm.task_type_id = #{task_type}
+		</if>
+		<if test="vendor_name != null and vendor_name != ''">
+			and cv.vendor_name LIKE CONCAT('%',#{vendor_name},'%') 
+		</if>
+		<if test="execute_id != null and execute_id != ''">
+			and sme.execute_id = #{execute_id}
+		</if>
+		<if test="moble != null and moble != ''">
+			and sme.executor = (select user_id from app_user au where au.moble = #{moble})
+		</if>
+	</select>
+	
+	<select id="getMediaResultDetailList"  parameterType="MediaResultSearch" resultType="MediaResultBean">
+		select
+			sse.execute_id,
+			(select xc.city_name from xt_city xc where xc.city_code = sse.exe_city and xc.city_level = 4) as exe_city,
+			sse.upload_time,
+			sse.accept_time,
+			(select moble from app_user au where au.user_id = sse.executor) as moble
+		from  s_media_execute sse,s_media ss
+		where sse.task_id = ss.task_id
+		and sse.task_id = #{task_id}
+		and sse.status = #{status}
+		and ss.is_del = 0 
+	    order by ss.create_time
+	    <if test="havePage == 1">
+            limit #{start},#{rows}
+        </if>
+	</select>
+	
+	<select id="getMediaResultDetailCount" parameterType="MediaResultSearch" resultType="int" >
+	   	select count(1)
+		from  s_media_execute sse,s_media ss
+		where sse.task_id = ss.task_id
+		and sse.task_id = #{task_id}
+		and sse.status = #{status}
+		and ss.is_del = 0 
+	</select>
+	
+	<select id="getMediaTargetList"  parameterType="MediaResultSearch" resultType="HashMap">
+		select
+			concat(province_name,city_name,address) as target
+		from  s_media_pt smt
+		where 
+		smt.task_id = #{task_id}
+	    order by smt.task_pt_id DESC
+	    <if test="havePage == 1">
+            limit #{start},#{rows}
+        </if>
+	</select>
+	
+	<select id="getMediaTargetCount" parameterType="MediaResultSearch" resultType="int" >
+	   	select count(1)
+		from  s_media_pt smt
+		where smt.task_id = #{task_id}
+	</select>
+	
+	<select id="getMediaInfo"  parameterType="MediaResultSearch" resultType="MediaResultBean">
+		select
+			ss.task_id,
+			ss.name,
+			ss.descript
+		from  s_media ss
+		where ss.task_id = #{task_id}
+		and ss.is_del = 0 
+	</select>
+	
+	<select id="getMediaResultInfo"  parameterType="MediaResultSearch" resultType="TaskAnswerBean">
+		select 
+			TT.cid,
+			TT.label,
+			TT.descript,
+			TT.required,
+			TT.field_type ,
+			TT.options,
+			TT.img_url,
+			GROUP_CONCAT(ssa.value) as value  
+		from 
+		(select
+			sst.sort,
+			sst.topic_id,
+			sst.cid,
+			sst.required,
+			sst.label,
+			sst.descript,
+			sst.field_type ,
+			sst.img_url,
+			GROUP_CONCAT(sso.option_title ORDER BY sso.option_value asc) as options
+		FROM
+			(select DISTINCT topic_id,cid from s_media_answer ssa,s_media ss 
+			 where ssa.task_id = ss.task_id and execute_id = #{execute_id}
+			 ) as T
+		LEFT JOIN s_media_topic sst 
+				ON  T.topic_id = sst.topic_id
+		LEFT JOIN s_media_option sso
+				ON T.topic_id = sso.topic_id
+		GROUP BY T.cid
+		) as TT
+		LEFT JOIN s_media_answer ssa
+				ON ssa.execute_id = #{execute_id}
+				and TT.topic_id = ssa.topic_id and TT.cid = ssa.cid
+		GROUP BY TT.cid
+		ORDER BY TT.sort
+	</select>
+	
+	<select id="getMediaExecuteDetail"  parameterType="MediaResultSearch" resultType="MediaExecuteBean">
+		select
+			ss.task_id,
+			ss.vendor_id,
+			ss.task_type_id,
+			ss.salary,
+			ss.plat_fee,
+			ss.name,
+			ss.vendor_id,
+			sse.execute_id,
+			sse.executor,
+			sse.upload_time,
+			sse.accept_time,
+			sse.score,
+			sse.accept_reason,
+			sse.exe_city,
+			au.registration_id,
+			au.platform,
+			au.brand,
+			stt.father_id
+		from  s_media_execute sse,s_media ss,app_user au,s_task_type stt
+		where sse.task_id = ss.task_id and ss.task_type_id = stt.task_type_id
+		and sse.executor = au.user_id
+		and sse.execute_id = #{execute_id}
+		and ss.is_del = 0 
+	</select>
+	
+	<update id="passTask" parameterType="MediaExecuteBean">
+	    UPDATE s_media_execute sme INNER JOIN s_media sm ON sme.task_id = sm.task_id
+	    SET sme.status = 4, sme.score = #{score},
+			sme.acceptor = sm.create_user,sme.accept_time = NOW(),
+	    	sme.is_agent = 1,sme.agent = #{audit_agent},
+	    	sme.is_passed = #{is_passed}, sme.passed_reason = #{passed_reason},
+	    	sm.status = (CASE when sm.status = 6 then 5 else sm.status END)
+	    WHERE sme.execute_id = #{execute_id} AND sme.status = 3
+	</update>
+	
+	<update id="rejectTask" parameterType="MediaExecuteBean">
+		UPDATE s_media_execute sme INNER JOIN s_media sm ON sme.task_id = sm.task_id
+		SET sme.status = 5, sme.score=#{score},
+		sme.acceptor = sm.create_user,sme.accept_time = NOW(),
+    	sme.is_agent = 1,sme.agent = #{audit_agent},
+		sme.accept_reason = #{accept_reason} 
+		WHERE sme.execute_id = #{execute_id} AND sme.status = 3
+	</update>
+	
+	<update id="incomeBalance" parameterType="MediaExecuteBean">
+		UPDATE APP_USER  
+		SET balance = balance + #{salary} 
+		WHERE user_id = #{executor}
+	</update>
+	
+	<update id="isComplete"  parameterType="String" >
+		UPDATE s_media ss 
+		SET ss.status = 4 ,ss.complete_time = NOW()
+		WHERE ss.task_id = #{task_id} AND ss.execute_times &lt;= ( SELECT COUNT(1) c FROM s_media_execute sse WHERE sse.task_id= #{task_id} AND sse.status = 4 )  
+	</update>
+	
+	<update id="completeExecute" parameterType="HashMap">
+		UPDATE s_media_execute sse INNER JOIN s_media ss
+		ON sse.task_id = ss.task_id AND ss.status = 4
+		SET sse.status = 5, sse.score=#{score},sse.accept_time = NOW(),sse.accept_reason = #{accept_reason} 
+		WHERE sse.task_id = #{task_id} and sse.status = 3
+	</update>
+	
+	<select id="getMediaTopic"  parameterType="MediaResultSearch" resultType="TaskTopicBean">
+		select sst.label  from s_media_topic sst,s_media ss
+		where sst.task_id = ss.task_id and ss.task_id = #{task_id}
+	</select>
+	
+	<select id="getResultData" parameterType="MediaResultSearch" resultMap="resultData">
+	    SELECT
+		  TT.*
+		FROM (SELECT
+		    sst.label,
+		    0 AS execute_id,
+		    0 AS moble,
+		    sst.cid,
+		    sst.field_type,
+		    NULL AS VALUE,
+		    NULL OPTIONS,
+		    NULL AS upload_time,
+		    NULL AS exe_city
+		  FROM s_media_topic sst
+		  WHERE sst.task_id = #{task_id}
+		  ORDER BY sst.sort ASC) AS TT
+		UNION
+		SELECT
+		  T.*
+		FROM (SELECT
+		    sst.label,
+		    ssa.execute_id,
+		    (SELECT
+		        moble
+		      FROM app_user au
+		      WHERE au.user_id = ssa.user_id) AS moble,
+		    ssa.cid,
+		    ssa.field_type,
+		    GROUP_CONCAT(ssa.value) AS VALUE,
+		    GROUP_CONCAT(sso.option_title) AS OPTIONS,
+		    sse.upload_time,
+		    xc.city_name
+		  FROM s_media_answer ssa
+		         LEFT JOIN s_media_topic sst
+		           ON ssa.task_id = sst.task_id
+		           AND ssa.topic_id = sst.topic_id
+		           AND ssa.task_id = #{task_id}
+		         LEFT JOIN s_media_option sso
+		           ON ssa.task_id = sso.task_id
+		           AND ssa.topic_id = sso.topic_id
+		           AND ssa.option_id = sso.option_id
+		         LEFT JOIN s_media_execute sse
+		           ON ssa.execute_id = sse.execute_id,
+		       xt_city xc
+		  WHERE ssa.task_id = #{task_id}
+		  AND sse.exe_city = xc.city_code
+		  AND xc.city_level = 4
+		  AND sse.`status` = 4
+		  GROUP BY ssa.execute_id,
+		           ssa.topic_id
+		  ORDER BY ssa.execute_id, sst.sort ASC) AS T
+	</select>
+	
+	
+	<resultMap id="resultData" type="MediaDataBean">
+		<result column="execute_id" property="execute_id" />
+		<result column="moble" property="moble" />
+		<result column="upload_time" property="upload_time" />
+		<result column="exe_city" property="exe_city" />
+		<collection property="answerList" ofType="TaskAnswerBean" >
+			<result column="cid" property="cid" />
+			<result column="label" property="label" />
+			<result column="field_type" property="field_type" />
+			<result column="value" property="value" />
+			<result column="options" property="options" />
+		</collection>
+	</resultMap>
+	
+</mapper>

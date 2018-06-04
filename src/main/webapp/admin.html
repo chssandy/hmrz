@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>河马软装管理系统</title>
+    <meta name="keywords" content="河马软装管理系统" />
+    <meta name="description" content="河马软装管理系统" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="resource/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="resource/css/colorbox.css" />
+    <link rel="stylesheet" href="resource/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="resource/css/jquery-ui-1.10.3.full.min.css" />
+    <link rel="stylesheet" href="resource/css/chosen.css" />
+    <link rel="stylesheet" href="resource/css/datepicker.css" />
+    <link rel="stylesheet" href="resource/css/ui.jqgrid.css" />
+    <link rel="stylesheet" href="resource/css/ace.min.css" />
+    <link rel="stylesheet" href="resource/css/ace-rtl.min.css" />
+    <link rel="stylesheet" href="resource/css/ace-skins.min.css" />
+    <link rel="stylesheet" href="resource/plugins/validator/jquery.validator.css">
+    <link rel="stylesheet" href="resource/plugins/artDialog/css/ui-dialog.css">
+    <script type="text/javascript" src="resource/js/ace-extra.min.js"></script>
+    <script type="text/javascript" src="resource/js/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="resource/plugins/validator/jquery.validator.js"></script>
+    <script type="text/javascript" src="resource/plugins/validator/local/zh_CN.min.js"></script>
+    <script type="text/javascript" src="resource/plugins/artDialog/dist/dialog-min.js"></script>
+    <script type="text/javascript" src="resource/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="resource/js/typeahead-bs2.min.js"></script>
+    <script type="text/javascript" src="resource/js/ace-elements.min.js"></script>
+    <script type="text/javascript" src="resource/js/ace.min.js"></script>
+    <script type="text/javascript" src="resource/js/common.js"></script>
+    <script type="text/javascript" src="resource/js/jquery.json.min.js"></script>
+    <script src="resource/plugins/jqGrid/js/jquery.jqGrid.min.js"></script>
+    <script src="resource/plugins/jqGrid/js/i18n/grid.locale-cn.js"></script>
+    <script type="text/javascript">
+        var store_page, store_post, isBack = false; //用来从操作页面跳转回列表页面时缓存以前的查询数据
+        function params(a) {
+            return a ? (publicParams.length = 0, publicParams.push(a), void 0) : publicParams.pop();
+        }
+
+        function switchMenu(a, b) {
+            store_page = '', store_post = undefined, isBack = false;
+            $("#consoleName").html(b), loadContext(a);
+        }
+
+        function loadContext(a) {
+            $("#hiddenFields").nextAll().not($("#password_modify_div")[0]).remove();
+            var b = WEB_URL + a;
+            $("#context").load(b, function(a, b) {
+                "error" == b && ($("#context").load("404.html", function() {}), $("#consoleName").html("\u9875\u9762\u4e22\u5931"));
+            });
+        }
+
+        function doLoginOut() {
+            $.ajax({
+                url: SERVER_URL + "/system/loginOut",
+                type: "post",
+                dataType: "json",
+                data: {},
+                error: function(a, b, c) {
+                    console.log(c);
+                },
+                success: function(a) {
+                    "success" == a.result && (window.location.href = "./login.html");
+                }
+            });
+        }
+
+        function changPwd() {
+            var a = $.cookie("loginUserId");
+            dialog({
+                id: "modify_pass",
+                title: "\u4fee\u6539\u5bc6\u7801",
+                content: $("#password_modify_div"),
+                width: 380,
+                okValue: "\u786e\u5b9a",
+                ok: function() {
+                    $.post(SERVER_URL + "/system/manager/modifyPassword", {
+                        manager_id: a,
+                        password: $("#password_modify").val()
+                    }, function(a) {
+                        0 == a ? dialog({
+                            title: "\u63d0\u793a",
+                            content: "\u5bc6\u7801\u4fee\u6539\u6210\u529f\uff01",
+                            okValue: "\u786e\u5b9a",
+                            ok: function() {}
+                        }).showModal() : dialog({
+                            title: "\u63d0\u793a",
+                            content: "\u5bc6\u7801\u4fee\u6539\u5931\u8d25\uff01",
+                            okValue: "\u786e\u5b9a",
+                            ok: function() {}
+                        }).showModal();
+                    });
+                },
+                onclose: function() {
+                    $("#pass_modify_form").find("input").val(""), $("#pass_modify_form").validator("cleanUp"), console.log(this), this.remove();
+                }
+            }).showModal();
+        }
+        $(function() {
+            $.ajax({
+                url: SERVER_URL + "/system/role/getURM" + "?nd=" + (new Date).getTime(),
+                dataType: "json",
+                success: function(a) {
+                    var c, b = [];
+                    "string" == typeof(c = a.allModuleList) && (c = $.parseJSON(c)), $.each(c, function(a, c) {
+                        b.push(a ? "<li>" : '<li class="">');
+                        var e, d = c.childrenList;
+                        if (d && (e = d.length) > 0) {
+                            b.push('<a href="#" class="dropdown-toggle"><i class="' + c.icon + '"></i><span class="menu-text">' + c.module_name + '</span><b class="arrow icon-angle-down"></b></a>'), b.push('<ul class="submenu">');
+                            for (var f = 0; e > f; f++) b.push('<li><a href="#" onclick="switchMenu(\'' + d[f].module_url + "','" + d[f].module_name + '\')"><i class="icon-double-angle-right"></i>' + d[f].module_name + "</a></li>");
+                            b.push("</ul>");
+                        } else b.push('<a href="#" onclick="switchMenu(\'' + c.module_url + "','" + c.module_name + '\')" ><i class="' + c.icon + '"></i><span class="menu-text">' + c.module_name + "</span></a></li>");
+                    }), $("#menuList").html(b.join(""));
+                }
+            });
+            for (var c, a = document.cookie, b = a.split("; "), d = 0; d < b.length; d++) {
+                var e = b[d].split("=");
+                if ("loginUserName" == e[0]) {
+                    c = e[1];
+                    break;
+                }
+            }
+            $("#username").html(c);
+        });
+        var publicParams = [];
+
+    </script>
+    <style>
+        .header_button_span {
+            float: right;
+            margin: -5px 20px;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div id="password_modify_div" style="display:none">
+        <form id="pass_modify_form" class="form-horizontal">
+            <div class="form-group">
+                <label class="col-sm-3 control-label no-padding-right" for="form-field-1">新 密 码</label>
+
+                <div class="col-sm-9">
+                    <input type="password" id="password_modify" name="password_modify" placeholder="密码" class="col-xs-10 col-sm-7" data-rule="required;password" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-3 control-label no-padding-right" for="form-field-1">确认密码</label>
+
+                <div class="col-sm-9">
+                    <input type="password" placeholder="确认密码" class="col-xs-10 col-sm-7" data-rule="required;password;match[password_modify]" data-msg-match="与上面的密码不同" />
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="navbar navbar-default" id="navbar">
+        <script type="text/javascript">
+            try {
+                ace.settings.check('navbar', 'fixed')
+            } catch (e) {}
+
+        </script>
+        <div class="navbar-container" id="navbar-container">
+            <div class="navbar-header pull-left">
+                <a href="#" class="navbar-brand">
+                    <small>
+						<i class="icon-user"></i>
+						河马软装管理系統
+					</small>
+                </a>
+                <!-- /.brand -->
+            </div>
+            <!-- /.navbar-header -->
+
+            <div class="navbar-header pull-right" role="navigation">
+                <ul class="nav ace-nav">
+                    <li class="light-blue">
+                        <a data-toggle="dropdown" href="#" class="dropdown-toggle">
+                            <img class="nav-user-photo" src="resource/images/user.jpg" alt="Jason's Photo" />
+                            <span class="user-info">
+								<small>欢迎光临,</small>
+								<p id="username"> </p>
+							</span>
+
+                            <i class="icon-caret-down"></i>
+                        </a>
+
+                        <ul class="user-menu pull-right dropdown-menu dropdown-yellow dropdown-caret dropdown-close">
+                            <li>
+                                <a href="javascript:changPwd();">
+                                    <i class="icon-cog"></i> 修改密码
+                                </a>
+                            </li>
+
+                            <li>
+                                <a href="#">
+                                    <i class="icon-user"></i> 个人资料
+                                </a>
+                            </li>
+
+                            <li class="divider"></li>
+
+                            <li>
+                                <a href="#" onclick="doLoginOut()">
+                                    <i class="icon-off"></i> 退出
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+                <!-- /.ace-nav -->
+            </div>
+            <!-- /.navbar-header -->
+        </div>
+        <!-- /.container -->
+    </div>
+
+    <div class="main-container" id="main-container">
+        <script type="text/javascript">
+            try {
+                ace.settings.check('main-container', 'fixed')
+            } catch (e) {}
+
+        </script>
+
+        <div class="main-container-inner">
+            <a class="menu-toggler" id="menu-toggler" href="#">
+                <span class="menu-text"></span>
+            </a>
+
+            <div class="sidebar" id="sidebar">
+                <script type="text/javascript">
+                    try {
+                        ace.settings.check('sidebar', 'fixed')
+                    } catch (e) {}
+
+                </script>
+                <!-- 快捷操作-->
+                <div class="sidebar-shortcuts" id="sidebar-shortcuts">
+                    <div class="sidebar-shortcuts-large" id="sidebar-shortcuts-large">
+                        <button class="btn btn-success" title="发布任务">
+                            <i class="icon-signal"></i>
+                        </button>
+
+                        <button class="btn btn-info" title="查看统计">
+                            <i class="icon-pencil"></i>
+                        </button>
+
+                        <button class="btn btn-warning" title="增加角色">
+                            <i class="icon-group"></i>
+                        </button>
+                    </div>
+
+                    <div class="sidebar-shortcuts-mini" id="sidebar-shortcuts-mini">
+                        <span class="btn btn-success"></span>
+                        <span class="btn btn-info"></span>
+                        <span class="btn btn-warning"></span>
+                    </div>
+                </div>
+                <!-- 快捷操作 -->
+                <!-- 菜单栏 -->
+                <ul class="nav nav-list" id="menuList">
+                    
+                </ul>
+                <!-- /.nav-list -->
+                <!-- 菜单栏 -->
+                <!-- 收缩菜单栏 -->
+                <div class="sidebar-collapse" id="sidebar-collapse">
+                    <i class="icon-double-angle-left" data-icon1="icon-double-angle-left" data-icon2="icon-double-angle-right"></i>
+                </div>
+                <!-- 收缩菜单栏 -->
+                <script type="text/javascript">
+                    try {
+                        ace.settings.check('sidebar', 'collapsed')
+                    } catch (e) {}
+
+                </script>
+            </div>
+
+            <div class="main-content">
+                <!-- 面包屑导航 -->
+                <div class="breadcrumbs" id="breadcrumbs">
+                    <script type="text/javascript">
+                        try {
+                            ace.settings.check('breadcrumbs', 'fixed')
+                        } catch (e) {}
+
+                    </script>
+
+                    <ul class="breadcrumb">
+                        <li>
+                            <i class="icon-home home-icon"></i>
+                            <a href="#">首页</a>
+                        </li>
+                        <li class="active">
+                            <label id="consoleName">控制台</label>
+                        </li>
+                    </ul>
+                </div>
+                <!-- 面包屑导航 -->
+
+                <div class="page-content" id="context">
+                </div>
+                <!-- /.page-content -->
+            </div>
+            <!-- /.main-content -->
+
+            <div class="ace-settings-container" id="ace-settings-container">
+                <div class="btn btn-app btn-xs btn-warning ace-settings-btn" id="ace-settings-btn">
+                    <i class="icon-cog bigger-150"></i>
+                </div>
+
+                <div class="ace-settings-box" id="ace-settings-box">
+                    <div>
+                        <div class="pull-left">
+                            <select id="skin-colorpicker" class="hide">
+                                <option data-skin="default" value="#438EB9">#438EB9</option>
+                                <option data-skin="skin-1" value="#222A2D">#222A2D</option>
+                                <option data-skin="skin-2" value="#C6487E">#C6487E</option>
+                                <option data-skin="skin-3" value="#D0D0D0">#D0D0D0</option>
+                            </select>
+                        </div>
+                        <span>&nbsp; 选择皮肤</span>
+                    </div>
+
+                    <div>
+                        <input type="checkbox" class="ace ace-checkbox-2" id="ace-settings-navbar" checked="checked" />
+                        <label class="lbl" for="ace-settings-navbar"> 固定导航条</label>
+                    </div>
+
+                    <div>
+                        <input type="checkbox" class="ace ace-checkbox-2" id="ace-settings-sidebar" checked="checked" />
+                        <label class="lbl" for="ace-settings-sidebar"> 固定滑动条</label>
+                    </div>
+
+                    <div>
+                        <input type="checkbox" class="ace ace-checkbox-2" id="ace-settings-breadcrumbs" checked="checked" />
+                        <label class="lbl" for="ace-settings-breadcrumbs">固定面包屑</label>
+                    </div>
+
+                    <div>
+                        <input type="checkbox" class="ace ace-checkbox-2" id="ace-settings-rtl" />
+                        <label class="lbl" for="ace-settings-rtl">切换到左边</label>
+                    </div>
+
+                    <div>
+                        <input type="checkbox" class="ace ace-checkbox-2" id="ace-settings-add-container" />
+                        <label class="lbl" for="ace-settings-add-container">
+                            切换窄屏
+                            <b></b>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <!-- /#ace-settings-container -->
+        </div>
+        <!-- /.main-container-inner -->
+        <a href="#" id="btn-scroll-up" class="btn-scroll-up btn btn-sm btn-inverse">
+            <i class="icon-double-angle-up icon-only bigger-110"></i>
+        </a>
+    </div>
+    <!-- /.main-container -->
+    <div id="hiddenFields"></div>
+</body>
+<script type="text/javascript" src="resource/js/page.js"></script>
+
+</html>

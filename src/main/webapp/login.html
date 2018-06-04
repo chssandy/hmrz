@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>河马软装管理系统登录</title>
+<meta name="keywords" content="河马软装" />
+<meta name="description" content="河马软装管理系统登录" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link href="resource/css/bootstrap.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="resource/css/font-awesome.min.css" />
+<!-- ace styles -->
+<style type="text/css">
+html {
+	min-height: 100%;
+	position: relative
+}
+
+body {
+	font-family: "Microsoft Yahei";
+	background: url(resource/images/login_background.png);
+	background-color: rgb(68, 168, 238);
+	width: 100%;
+	overflow-x: hidden;
+	padding-bottom: 0;
+	min-height: 100%;
+}
+
+.foot {
+	clear: both;
+	background-color: #fff;
+	height: 100px;
+	width: 100%;
+	font-size: 14px;
+	bottom: 0px; margin : 0 auto; overflow : hidden; position : absolute;
+	text-align : left;
+	z-index: 0;
+	margin: 0 auto;
+	overflow: hidden;
+	position: absolute;
+	text-align: left;
+}
+
+.copyrigh {
+	padding-top: 28px;
+}
+
+.info {
+	font-size: 44px;
+	color: #fff;
+	font-weight: bold;
+}
+
+.content {
+	height: 100%;
+}
+
+.left-frame {
+	margin-top: 100px
+}
+
+.login-frame {
+	background: url(resource/images/login_frame.png);
+	min-height: 533px;
+	background-repeat: no-repeat;
+}
+
+.login-form {
+	padding-left: 55px;
+	padding-top: 50px;
+}
+
+.form-group {
+	width: 300px
+}
+
+.form-group label {
+	font-size: 22px;
+	font-weight: lighter;
+	margin-top: 20px
+}
+
+.login-info {
+	font-size: 24px;
+	font-weight: 400;
+	color: rgb(68, 168, 238);
+	margin-bottom: 7px
+}
+
+.login-tip {
+	font-size: 16px;
+	font-weight: lighter;
+	color: rgb(173, 172, 172);
+}
+
+.login-form input[type="text"],.login-form input[type="password"] {
+	height: 46px
+}
+</style>
+</head>
+
+<body>
+	<div class="content container-fluid">
+		<div class="row" style="margin-top: 180px;margin-bottom:134px;">
+			<div class="left-frame col-md-6">
+				<div class="col-lg-offset-2">
+				</div>
+				<div class="col-lg-offset-2">
+					<p class="info">河马软装管理系统登录</p>
+				</div>
+			</div>
+			<div class="right-frame col-md-6">
+				<div class="row">
+					<div class="col-md-12 col-lg-offset-4">
+						<div class="login-frame">
+							<div class="login-form">
+								<div class="form-group">
+									<p class="login-info">Manager登录</p>
+									<p class="login-tip">让业务管理，终端运营更高效</p>
+								</div>
+								<div class="form-group">
+									<label for="moble">用户名：</label> <input type="text"
+										 class="form-control" id="userName">
+								</div>
+								<div class="form-group">
+									<label for="password">密码：</label> <input type="password"
+										maxlength="20" class="form-control" id="password">
+									<div style="min-height: 20px;margin-top: 20px;">
+										<p style="display: none" id="login_error"
+											class="error_tips alert-danger col-md-12 col-sm-12"
+											id="error_tips">
+											<strong> <i class="icon-remove"></i>
+											</strong>请输入正确的账号和密码
+										</p>
+									</div>
+								</div>
+								<div class="form-group botton-group">
+									<button type="button" class="btn btn-info col-md-12 col-sm-12"
+										id="login_but">登录</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="foot">
+		<p class="text-center copyrigh">Copyright &copy; 2018 | 南京河马软装科技
+			版权所有</p>
+		<ul class="list-inline text-center">
+			<li><a href="http://www.miibeian.gov.cn/" target="_blank">苏ICP备**********号-1
+			</a></li>
+			<li>| 南京市***路**号********</li>
+		</ul>
+	</div>
+	<!-- basic scripts -->
+
+
+	<script type="text/javascript">
+		window.jQuery
+				|| document
+						.write("<script src='./resource/js/jquery-2.0.3.min.js'>"
+								+ "<" + "/script>");
+		window.jQuery
+				|| document.write("<script src='./resource/js/common.js'>"
+						+ "<" + "/script>");
+	</script>
+
+	<!-- <![endif]-->
+	<script type="text/javascript">
+		$(document).ready(function() {
+							$('#login_but').click(function(){
+								doLogin();
+							});
+							$("#userName").focus(function(event){
+								$("#login_error")[0].style.display = 'none';
+							});
+							$("#password").focus(function(event){
+								$("#login_error")[0].style.display = 'none';
+							});
+							$("#password").keydown(function(event) {
+								$("#login_error")[0].style.display = 'none';
+								if (event.keyCode == "13") { //keyCode=13是回车键
+									doLogin();
+								}
+							});
+							function doLogin() {
+								if ($('#userName').val() == "") {
+									$("#login_error")[0].style.display = 'block';
+									return false;
+								}
+								if ($('#password').val() == "") {
+									$("#login_error")[0].style.display = 'block';
+									return false;
+								}
+								$.ajax({url : SERVER_URL+ '/public/login'+ '?nd='+ new Date().getTime(),
+											type : 'post',
+											dataType : 'json',
+											data : {
+												login_name : $('#userName').val(),
+												login_pwd : $('#password').val()
+											},
+											error : function(
+													xhr, state,
+													exception) {
+												console.log(exception);
+											},
+											success : function(res) {
+												if (res.result == 'success') {
+													window.location.href = "./admin.html";
+												} else {
+													$("#login_error")[0].style.display = 'block';
+												}
+											}
+										});
+							}
+							
+						});
+
+		if ("ontouchend" in document)
+			document.write("<script src='./assets/js/jquery.mobile.custom.min.js'>"+ "<" + "/script>");
+	</script>
+
+	<!-- inline scripts related to this page -->
+
+	<script type="text/javascript">
+		function show_box(id) {
+			jQuery('.widget-box.visible').removeClass('visible');
+			jQuery('#' + id).addClass('visible');
+		}
+	</script>
+</body>
+</html>
