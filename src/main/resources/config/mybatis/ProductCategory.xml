@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.product.category">
+    
+	<select id="getProductCategoryList" parameterType="ProductCategorySearch" resultType="ProductCategoryBean">
+        SELECT
+        	pc.category_id,
+			pc.category_name,
+			pc.create_user,
+			pc.create_time,
+			pc.is_del
+        FROM 
+        	product_category pc
+        WHERE
+            pc.is_del = 0
+            <if test="category_name_search != null and category_name_search != ''">
+                AND pc.category_name LIKE CONCAT('%',#{category_name_search},'%')
+            </if>
+        ORDER BY pc.category_id desc
+        <if test="havePage == 1">
+        LIMIT #{start} , #{rows}
+        </if>
+	</select>
+	
+	<select id="getProductCategoryCount" parameterType="ProductCategorySearch" resultType="int">
+        SELECT
+        	count(1)
+        FROM 
+        	product_category pc
+        WHERE
+            pc.is_del = 0
+        <if test="category_name_search != null and category_name_search != ''">
+            AND pc.category_name LIKE CONCAT('%',#{category_name_search},'%')
+        </if>
+	</select>
+	
+	<select id="getProductCategory" parameterType="ProductCategorySearch" resultType="ProductCategoryBean">
+        SELECT
+        	pc.category_id,
+			pc.category_name,
+			pc.create_user,
+			pc.create_time,
+			pc.is_del
+        FROM 
+        	product_category pc
+        WHERE
+            pc.is_del = 0
+            <if test="category_name_search != null and category_name_search != ''">
+                AND pc.category_name LIKE CONCAT('%',#{category_name_search},'%')
+            </if>
+	        <if test="category_id_search != null and category_id_search != ''">
+	            AND pc.category_id = #{category_id_search}
+	        </if>
+	</select>
+	
+	<select id="getProductCategoryAll" resultType="ProductCategoryBean">
+        SELECT
+        	pc.category_id,
+			pc.category_name
+        FROM 
+        	product_category pc
+        WHERE
+            pc.is_del = 0
+        ORDER BY pc.category_id desc
+	</select>
+    
+    <insert id="addProductCategory" parameterType="ProductCategoryBean" useGeneratedKeys="true" keyProperty="category_id">
+        INSERT INTO product_category (
+			category_name,
+			create_user
+        )
+        VALUES 
+        (#{category_name,jdbcType=VARCHAR},
+         #{create_user,jdbcType=VARCHAR}
+         )
+    </insert>
+    
+    <update id="modifyProductCategory" parameterType="ProductCategoryBean">
+        UPDATE product_category
+        <set>
+            <if test="category_name != null and category_name != ''">
+                category_name = #{category_name,jdbcType=VARCHAR}
+            </if>
+        </set>
+        WHERE category_id = #{category_id} 
+    </update>
+    
+    
+    <update id="delProductCategory" parameterType="java.util.Map">
+		UPDATE product_category set is_del = 1	
+		WHERE category_id in
+		<foreach collection="id" item="item"  separator="," open="(" close=")">
+		(#{item,jdbcType=VARCHAR})
+        </foreach>
+	</update>
+</mapper>

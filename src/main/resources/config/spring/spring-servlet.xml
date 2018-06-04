@@ -52,11 +52,12 @@
 		<property name="suffix" value="" />
 		<property name="order" value="1"></property>
 		</bean> -->
-	<mvc:view-controller path="/" view-name="/admin.html" />
+	<mvc:view-controller path="/" view-name="/www/index.html" />
 
 	<!-- 添加对静态文件的访问 -->
 	<mvc:resources location="/resources/" mapping="/resource/**" />
 	<mvc:resources location="/pages/" mapping="/pages/**" />
+	<mvc:resources location="/www/" mapping="/www/**" />
 	<mvc:resources location="/favicon.ico" mapping="/favicon.ico" />
 	<mvc:resources location="/" mapping="/*.html" />
 
