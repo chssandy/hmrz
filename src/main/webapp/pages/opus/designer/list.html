@@ -1,0 +1,61 @@
+<link rel="stylesheet" href="resource/css/chosen.css" />
+
+<div class="page-content">
+    <div style="margin-bottom: 10px;" class="form-horizontal">
+        <div class="span7" id="acct-password-row" style="width: 50%;float: left;">
+            <div class="form-group">
+                <label for="category_name_search" class="col-sm-3 control-label no-padding-right">设计师</label>
+                <div class="col-sm-9">
+                    <input type="text" class="col-xs-10 col-sm-5 span4" placeholder="设计师" name="designer_name_search" id="designer_name_search">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="page-header" style="margin-bottom: 40px">
+        <h1>
+			<span class="header_button_span " >
+				<button class="btn btn-primary" id="search-button">查询</button>&nbsp;&nbsp;
+				<button class="btn" id="add-button">新增</button>&nbsp;&nbsp;
+				<button class="btn" id="del-buttion">删除</button>&nbsp;&nbsp;
+			</span>
+        </h1>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-12">
+            <table id="tables"></table>
+            <div id="pager"></div>
+        </div>
+    </div>
+</div>
+
+
+<div id='addDesigner' style="display: none">
+    <form id="designerForm" name="designerForm" class="form-horizontal">
+        <div class="form-group">
+            <label class="col-sm-3 control-label no-padding-right" for="designer_name">设计师</label>
+            <div class="col-sm-9">
+                <input type="text" id="designer_name" name="designer_name" placeholder="设计师" class="col-xs-10 col-sm-7"/>
+            </div>
+        </div>
+
+        <div class="clearfix form-actions" style="margin-bottom: 0px; margin-top: 0px">
+            <div class="col-md-offset-3 col-md-9" style="margin-left: 15%">
+                <button class="btn btn-info" type="button" id="designerSubmit">
+                    <i class="icon-ok bigger-110"></i>
+                    保存
+                </button>
+                &nbsp; &nbsp; &nbsp;
+
+                <button class="btn" type="reset" id="designerReset">
+                    <i class="icon-undo bigger-110"></i>
+                    重置
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script type="text/javascript" src="resource/js/plupload.full.min.js"></script>
+<script type="text/javascript" src="resource/js/fileUploader.min.js"></script>
+<script src="pages/opus/designer/list.js"></script>

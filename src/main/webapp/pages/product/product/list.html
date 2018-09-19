@@ -1,0 +1,74 @@
+<link rel="stylesheet" href="resource/css/chosen.css" />
+<link rel="stylesheet" href="resource/plugins/UMeditor/themes/default/css/umeditor.min.css"/>
+
+<div class="page-content">
+    <div style="margin-bottom: 10px;" class="form-horizontal">
+        <div class="span7" id="acct-password-row" style="width: 50%;float: left;">
+            <div class="form-group">
+                <label for="product_name_search" class="col-sm-3 control-label no-padding-right">产品名称</label>
+                <div class="col-sm-9">
+                    <input type="text" class="col-xs-10 col-sm-5 span4" placeholder="产品名称" name="product_name_search" id="product_name_search">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="page-header" style="margin-bottom: 40px">
+        <h1>
+			<span class="header_button_span " >
+				<button class="btn btn-primary" id="search-button">查询</button>&nbsp;&nbsp;
+				<button class="btn" id="add-button">新增</button>&nbsp;&nbsp;
+				<button class="btn" id="del-buttion">删除</button>&nbsp;&nbsp;
+			</span>
+        </h1>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-12">
+            <table id="tables"></table>
+            <div id="pager"></div>
+        </div>
+    </div>
+</div>
+
+
+<div id='addProduct' style="minWidth:'1000px';display: none" >
+    <form id="productForm" name="productForm" class="form-horizontal">
+        <div class="form-group">
+            <label class="col-sm-3 control-label no-padding-right" for="product_name">产品名称</label>
+            <div class="col-sm-9">
+                <input type="text" id="product_name" name="product_name" placeholder="产品名称" class="col-xs-10 col-sm-7"/>
+            </div>
+        </div>
+          
+        <div class="form-group">
+            <label class="col-lg-1 col-md-2 control-label">产品描述:</label>
+            <div class="col-lg-11">
+              <script type="text/plain" id="UMeditor" style="width:600px;height:200px;"></script>
+            </div>
+            <span id="descript_message"></span>
+        </div>
+		<input type="hidden" name="description" />
+		
+        <div class="clearfix form-actions" style="margin-bottom: 0px; margin-top: 0px">
+            <div class="col-md-offset-3 col-md-9" style="margin-left: 15%">
+                <button class="btn btn-info" type="button" id="productSubmit">
+                    <i class="icon-ok bigger-110"></i>
+                    保存
+                </button>
+                &nbsp; &nbsp; &nbsp;
+
+                <button class="btn" type="reset" id="productReset">
+                    <i class="icon-undo bigger-110"></i>
+                    重置
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script type="text/javascript" src="resource/js/plupload.full.min.js"></script>
+<script type="text/javascript" src="resource/js/fileUploader.min.js"></script>
+<script type="text/javascript" src="resource/plugins/UMeditor/umeditor.config.js"></script>
+<script type="text/javascript" src="resource/plugins/UMeditor/umeditor.min.js"></script>
+
+<script src="pages/product/product/list.js"></script>

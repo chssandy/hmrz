@@ -66,36 +66,17 @@
 
 	<mvc:interceptors>
 		<mvc:interceptor>
-			<mvc:mapping path="/system/**" />
-			<mvc:mapping path="/vendor/**" />
-			<mvc:mapping path="/user/**" />
-			<mvc:mapping path="/info/**" />
-			<mvc:mapping path="/task/**" />
-			<mvc:mapping path="/monitor/**" />
-			<mvc:mapping path="/media/**" />
-			<mvc:mapping path="/inspecte/**" />
-			<mvc:mapping path="/collect/**" />
-			<mvc:mapping path="/sharewx/**" />
-			<mvc:mapping path="/survey/**" />
-			<mvc:mapping path="/recommend/**" />
-			<mvc:mapping path="/sign/**" />
+		    <mvc:mapping path="/**" />
 			<mvc:exclude-mapping path="/public/**" />
+			<mvc:exclude-mapping path="/**/*.*" />
+			<mvc:exclude-mapping path="/" />
 			<bean class="com.hmrz.common.interceptor.LoginCheckInterceptor" />
 		</mvc:interceptor>
 		<mvc:interceptor>
-			<mvc:mapping path="/system/**" />
-			<mvc:mapping path="/vendor/**" />
-			<mvc:mapping path="/user/**" />
-			<mvc:mapping path="/info/**" />
-			<mvc:mapping path="/task/**" />
-			<mvc:mapping path="/monitor/**" />
-			<mvc:mapping path="/media/**" />
-			<mvc:mapping path="/inspecte/**" />
-			<mvc:mapping path="/collect/**" />
-			<mvc:mapping path="/sharewx/**" />
-			<mvc:mapping path="/survey/**" />
-			<mvc:mapping path="/recommend/**" />
-			<mvc:mapping path="/sign/**" />
+			<mvc:mapping path="/**" />
+			<mvc:exclude-mapping path="/" />
+			<mvc:exclude-mapping path="/**/public/**" />
+			<mvc:exclude-mapping path="/**/*.*" />
 			<mvc:exclude-mapping path="/system/role/getURM" />
 			<mvc:exclude-mapping path="/system/loginOut" />
 			<bean class="com.hmrz.common.interceptor.AuthorityInterceptor" />

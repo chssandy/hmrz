@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmrz.mybatis.product">
+    
+	<select id="getProductList" parameterType="ProductSearch" resultType="ProductBean">
+        SELECT
+        	pc.product_id,
+			pc.product_name,
+			pc.description,
+			pc.category_id,
+			pc.create_user,
+			pc.create_time,
+			pc.status,
+			pc.is_del
+
+        FROM 
+        	product pc
+        WHERE
+            pc.is_del = 0
+            <if test="product_name_search != null and product_name_search != ''">
+                AND pc.product_name LIKE CONCAT('%',#{product_name_search},'%')
+            </if>
+        ORDER BY pc.product_id desc
+        <if test="havePage == 1">
+        LIMIT #{start} , #{rows}
+        </if>
+	</select>
+	
+	<select id="getProductCount" parameterType="ProductSearch" resultType="int">
+        SELECT
+        	count(1)
+        FROM 
+        	product pc
+        WHERE
+            pc.is_del = 0
+        <if test="product_name_search != null and product_name_search != ''">
+            AND pc.product_name LIKE CONCAT('%',#{product_name_search},'%')
+        </if>
+	</select>
+	
+	<insert id="addProduct" parameterType="ProductBean" useGeneratedKeys="true" keyProperty="product_id">
+        INSERT INTO product (
+			product_name,
+			description,
+			category_id,
+			create_user
+        )
+        VALUES 
+        (#{product_name},#{description},#{category_id}, #{create_user})
+    </insert>
+	
+	<update id="modifyProduct" parameterType="ProductBean">
+        UPDATE product
+        <set>
+            <if test="product_name != null and product_name != ''">
+                product_name = #{product_name,jdbcType=VARCHAR}
+            </if>
+            <if test="description != null and description != ''">
+                description = #{description,jdbcType=TEXT}
+            </if>
+            <if test="category_id != null and category_id != ''">
+                category_id = #{category_id,jdbcType=BIGINT}
+            </if>
+        </set>
+        WHERE product_id = #{product_id} 
+    </update>
+    
+    <update id="delProduct" parameterType="java.util.Map">
+		UPDATE product set is_del = 1	
+		WHERE product_id in
+		<foreach collection="id" item="item"  separator="," open="(" close=")">
+		(#{item,jdbcType=VARCHAR})
+        </foreach>
+	</update>
+	
+	
+	<select id="getProduct" parameterType="ProductSearch" resultType="ProductBean">
+        SELECT
+        	pc.product_name,
+			pc.description,
+			pc.category_id,
+			pc.create_user
+        	pc.status,
+			pc.create_time,
+			pc.is_del
+        FROM 
+        	product pc
+        WHERE
+            pc.is_del = 0
+            <if test="product_name_search != null and product_name_search != ''">
+                AND pc.product_name LIKE CONCAT('%',#{product_name_search},'%')
+            </if>
+	        <if test="product_id_search != null and product_id_search != ''">
+	            AND pc.product_id = #{product_id_search}
+	        </if>
+	</select>
+  
+</mapper>
